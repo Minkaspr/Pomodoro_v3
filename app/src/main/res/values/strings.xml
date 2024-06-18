@@ -1,3 +1,46 @@
 <resources>
     <string name="app_name">Pomodoro</string>
+    <string name="canal_not_nombre">Notificaciones Pomodoro</string>
+    <string name="canal_not_descripcion">Alertas de tiempo de trabajo y descanso</string>
+
+    <string name="pagina_inicio">Inicio</string>
+    <string name="frag_ini_titulo">POMODORO</string>
+    <string name="frag_ini_subtitulo_1">Trabajo</string>
+    <string name="frag_ini_subtitulo_2">Descanso</string>
+    <string name="frag_ini_tiempo_predeterminado">00:00</string>
+    <string name="frag_ini_descripcion_ic_circulo">fondo</string>
+
+    <string name="pagina_rendimiento">Rendimiento</string>
+    <string name="frag_rendimiento_titulo">Rendimiento</string>
+
+    <string name="pagina_ajustes">Ajustes</string>
+    <string name="frag_aju_titulo">Ajustes</string>
+    <string name="frag_aju_op_pomodoro">Pomodoro</string>
+    <string name="frag_aju_op_1_clasico">Clásico</string>
+    <string name="frag_aju_op_1_clasico_descripcion">Trabajo 25 min y Descanso 5 min</string>
+    <string name="frag_aju_op_2_extendido">Extendido</string>
+    <string name="frag_aju_op_2_extendido_descripcion">Trabajo 45 min y Descanso 15 min</string>
+    <string name="frag_aju_op_3_corto">Corto</string>
+    <string name="frag_aju_op_3_corto_descripcion">Trabajo 10 min y Descanso 2 min</string>
+    <string name="frag_aju_op_4_personalizado">Personalizado</string>
+    <string name="frag_aju_op_4_personalizado_descripcion">Trabajo y Descanso a tu medida</string>
+    <string name="frag_aju_descripcion_ic_informacion">Información</string>
+    <string name="frag_aju_op_4_personalizado_informacion_descripcion">Mantener presionado para editar</string>
+    <string name="frag_aju_descripcion_ic_seleccionado">Seleccionado</string>
+
+    <string name="hoja_inferior_titulo_cronometro">Personalizar</string>
+    <string name="hoja_inferior_titulo_tiempo_trabajo">Tiempo de trabajo</string>
+    <string name="hoja_inferior_ayuda_tiempo_trabajo">Entre 5 y 90 minutos</string>
+    <string name="hoja_inferior_titulo_tiempo_descanso">Tiempo de descanso</string>
+    <string name="hoja_inferior_ayuda_tiempo_descanso">Entre 1 y 30 minutos</string>
+    <string name="hoja_inferior_boton_confirmar">Confirmar</string>
+    <string name="hoja_inferior_descripcion_ic_cerrar">Cerrar</string>
+
+    <string name="frag_aju_op_sistema">Sistema</string>
+    <string name="frag_aju_op_tema">Tema</string>
+    <string name="frag_aju_op_sonido">Sonido</string>
+    <string name="frag_aju_op_vibracion">Vibración</string>
+    <string name="frag_aju_descripcion_interruptor_silencio">Sonido</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

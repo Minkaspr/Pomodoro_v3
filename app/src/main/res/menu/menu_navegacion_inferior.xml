@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navegacion_inicio"
+        android:enabled="true"
+        android:icon="@drawable/ic_home_outline"
+        android:title="@string/pagina_inicio"/>
+
+    <item
+        android:id="@+id/navegacion_rendimiento"
+        android:enabled="true"
+        android:icon="@drawable/ic_performance_outline"
+        android:title="@string/pagina_rendimiento"/>
+
+    <item
+        android:id="@+id/navegacion_ajustes"
+        android:enabled="true"
+        android:icon="@drawable/ic_settings_outline"
+        android:title="@string/pagina_ajustes"/>
+</menu>
