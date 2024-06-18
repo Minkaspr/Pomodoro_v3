@@ -1,14 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.InicioFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/tvTitulo"
+        android:textAppearance="?attr/textAppearanceHeadlineLarge"
+        android:textColor="?android:attr/colorPrimary"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/frag_ini_titulo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-</FrameLayout>
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tlOpcionesTiempo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvTitulo">
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tiTiempoTrabajo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/frag_ini_subtitulo_1"
+            />
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tiTiempoDescanso"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/frag_ini_subtitulo_2"
+            />
+    </com.google.android.material.tabs.TabLayout>
+
+    <ScrollView
+        android:id="@+id/svContenedor"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tlOpcionesTiempo">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/llCompat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <RelativeLayout
+                    android:id="@+id/rlContenedor"
+                    android:layout_width="300dp"
+                    android:layout_height="300dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/frag_ini_ic_circulo_desc"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_circle"
+                        />
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/pbCirculo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentBottom="true"
+                        app:indicatorSize="80dp"
+                        app:trackCornerRadius="8dp"
+                        />
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:id="@+id/tvTiempo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:gravity="center"
+                        android:text="@string/frag_ini_tiempo_predeterminado"
+                        android:textSize="64sp"
+                        android:textStyle="bold"
+                        />
+                </RelativeLayout>
+            </androidx.appcompat.widget.LinearLayoutCompat>
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="32dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/llCompat">
+                <com.google.android.material.button.MaterialButton
+                    style="?attr/materialIconButtonOutlinedStyle"
+                    android:id="@+id/btnDetener"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:icon="@drawable/ic_player_stop"
+                    app:iconSize="32dp"
+                    android:visibility="gone"
+                    />
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp"/>
+                <com.google.android.material.button.MaterialButton
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:id="@+id/btnReproducir"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:icon="@drawable/ic_player_play"
+                    app:iconSize="48dp"
+                    />
+                <com.google.android.material.button.MaterialButton
+                    style="?attr/materialIconButtonStyle"
+                    android:id="@+id/btnDetenerAlarma"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:icon="@drawable/ic_player_stop"
+                    app:iconSize="48dp"
+                    android:visibility="gone"
+                    />
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp"/>
+                <com.google.android.material.button.MaterialButton
+                    style="?attr/materialIconButtonFilledTonalStyle"
+                    android:id="@+id/btnPausar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:icon="@drawable/ic_player_pause"
+                    app:iconSize="32dp"
+                    android:visibility="gone"
+                    />
+                <com.google.android.material.button.MaterialButton
+                    style="?attr/materialIconButtonFilledStyle"
+                    android:id="@+id/btnContinuar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:icon="@drawable/ic_player_continue"
+                    app:iconSize="32dp"
+                    android:visibility="gone"
+                    />
+            </androidx.appcompat.widget.LinearLayoutCompat>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

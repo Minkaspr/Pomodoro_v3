@@ -9,9 +9,9 @@ import com.mk.pomodoro.ui.AjustesFragment;
 import com.mk.pomodoro.ui.InicioFragment;
 import com.mk.pomodoro.ui.RendimientoFragment;
 
-public class AdaptadorDeVista extends FragmentStateAdapter {
+public class GestorPaginasAdapter extends FragmentStateAdapter {
 
-    public AdaptadorDeVista(@NonNull FragmentActivity fragmentActivity) {
+    public GestorPaginasAdapter(@NonNull FragmentActivity fragmentActivity) {
         super(fragmentActivity);
     }
 
