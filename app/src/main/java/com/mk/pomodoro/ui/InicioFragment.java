@@ -51,6 +51,8 @@ public class InicioFragment extends Fragment {
     private boolean intervaloActivado = false;
     private long fechaInicio;
     private long fechaFin;
+    private long tiempoMuertoAcumulado = 0;
+    private long ultimoTiempoPausa = 0;
 
     private Temporizador temporizador;
     private SharedPreferences preferencias;
@@ -137,8 +139,12 @@ public class InicioFragment extends Fragment {
                 iniciarTemporizador = false;
                 if (intervaloActivado) {
                     fechaFin = System.currentTimeMillis(); // Guardar la hora actual como fin
+                    long duracionTotal = fechaFin - fechaInicio; // Calcular la duración total del intervalo
+                    long duracionActiva = duracionTotal - tiempoMuertoAcumulado; // Restar el tiempo muerto para obtener la duración activa
                     intervaloActivado = false;
-                    guardarIntervaloEnBD(fechaInicio, fechaFin);
+                    guardarIntervaloEnBD(fechaInicio, fechaFin, duracionActiva);
+                    ultimoTiempoPausa = 0;
+                    tiempoMuertoAcumulado = 0;
                 }
             }
             @Override
@@ -166,8 +172,12 @@ public class InicioFragment extends Fragment {
             gestorPomodoro.setTemporizadorIniciado(false);
             if (intervaloActivado) {
                 fechaFin = System.currentTimeMillis(); // Guardar la hora actual como fin
+                long duracionTotal = fechaFin - fechaInicio; // Calcular la duración total del intervalo
+                long duracionActiva = duracionTotal - tiempoMuertoAcumulado; // Restar el tiempo muerto para obtener la duración activa
                 intervaloActivado = false;
-                guardarIntervaloEnBD(fechaInicio, fechaFin);
+                guardarIntervaloEnBD(fechaInicio, fechaFin, duracionActiva);
+                ultimoTiempoPausa = 0;
+                tiempoMuertoAcumulado = 0;
             }
         });
         botonIniciar.setOnClickListener(v -> {
@@ -181,17 +191,21 @@ public class InicioFragment extends Fragment {
             if (!intervaloActivado) {
                 fechaInicio = System.currentTimeMillis(); // Guardar la hora actual como inicio
                 intervaloActivado = true;
+                tiempoMuertoAcumulado = 0;
             }
         });
         botonPausar.setOnClickListener(v -> {
             temporizador.pausarTemporizador();
             botonPausar.setVisibility(View.GONE);
             botonContinuar.setVisibility(View.VISIBLE);
+            ultimoTiempoPausa = System.currentTimeMillis(); // Guardar la hora actual como tiempo de pausa
         });
         botonContinuar.setOnClickListener(v -> {
             temporizador.reanudarTemporizador();
             botonContinuar.setVisibility(View.GONE);
             botonPausar.setVisibility(View.VISIBLE);
+            long tiempoReanudacion = System.currentTimeMillis(); // Guardar la hora actual como tiempo de reanudación
+            tiempoMuertoAcumulado += tiempoReanudacion - ultimoTiempoPausa; // Sumar al acumulador de tiempo muerto
         });
         botonDetenerAlarma.setOnClickListener(v -> {
             // Detiene el sonido de la alarma.
@@ -215,8 +229,12 @@ public class InicioFragment extends Fragment {
 
             if (intervaloActivado) {
                 fechaFin = System.currentTimeMillis(); // Guardar la hora actual como fin
+                long duracionTotal = fechaFin - fechaInicio; // Calcular la duración total del intervalo
+                long duracionActiva = duracionTotal - tiempoMuertoAcumulado; // Restar el tiempo muerto para obtener la duración activa
                 intervaloActivado = false;
-                guardarIntervaloEnBD(fechaInicio, fechaFin);
+                guardarIntervaloEnBD(fechaInicio, fechaFin, duracionActiva);
+                ultimoTiempoPausa = 0;
+                tiempoMuertoAcumulado = 0;
             }
         });
 
@@ -264,8 +282,12 @@ public class InicioFragment extends Fragment {
         }
         if (intervaloActivado) {
             fechaFin = System.currentTimeMillis(); // Guardar la hora actual como fin
+            long duracionTotal = fechaFin - fechaInicio; // Calcular la duración total del intervalo
+            long duracionActiva = duracionTotal - tiempoMuertoAcumulado; // Restar el tiempo muerto para obtener la duración activa
             intervaloActivado = false;
-            guardarIntervaloEnBD(fechaInicio, fechaFin);
+            guardarIntervaloEnBD(fechaInicio, fechaFin, duracionActiva);
+            ultimoTiempoPausa = 0;
+            tiempoMuertoAcumulado = 0;
         }
     }
 
@@ -341,7 +363,7 @@ public class InicioFragment extends Fragment {
         botonDetener.setVisibility(View.GONE);
     }
 
-    private void guardarIntervaloEnBD(long inicio, long fin) {
+    private void guardarIntervaloEnBD(long inicio, long fin, long duracionActiva) {
         // Obtener la instancia de SQLiteDatabase
         PomodoroAppDB dbHelper = new PomodoroAppDB(getContext());
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -356,12 +378,11 @@ public class InicioFragment extends Fragment {
         intervalo.setEsTrabajo(esTrabajo);
         intervalo.setFechaInicio(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date(inicio)));
         intervalo.setFechaFin(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date(fin)));
+        intervalo.setDuracionTotal((int) (duracionActiva));
 
-        // Usar tu clase DaoIntervalo para insertar el objeto en la base de datos
         DaoIntervalo daoIntervalo = new DaoIntervalo(db);
-        long idIntervalo = daoIntervalo.insertarIntervalo(intervalo);
+        daoIntervalo.insertarIntervalo(intervalo);
 
-        // Cerrar la base de datos cuando hayas terminado
         db.close();
     }
 

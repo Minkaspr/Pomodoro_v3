@@ -33,6 +33,7 @@ public class PomodoroAppDB extends SQLiteOpenHelper {
                 "es_trabajo BOOLEAN NOT NULL," +
                 "fecha_inicio TEXT NOT NULL," + // Fecha y hora de inicio en formato ISO-8601
                 "fecha_fin TEXT NOT NULL," + // Fecha y hora de fin en formato ISO-8601
+                "duracion_total INTEGER NOT NULL," + // Duración total del intervalo en milisegundos
                 "FOREIGN KEY(tipo_id) REFERENCES TipoPomodoro(id_tipo)" +
                 ");";
         db.execSQL(tablaIntervalo);
@@ -41,8 +42,8 @@ public class PomodoroAppDB extends SQLiteOpenHelper {
         String tablaObjetivoDiario = "CREATE TABLE objetivo_diario (" +
                 "id_objetivo INTEGER PRIMARY KEY," +
                 "fecha TEXT NOT NULL," + // Solo fecha en formato ISO-8601
-                "tiempo_objetivo INTEGER NOT NULL," + // Tiempo objetivo en minutos
-                "tiempo_cumplido INTEGER NOT NULL DEFAULT 0" + // Tiempo cumplido en minutos
+                "tiempo_objetivo INTEGER NOT NULL," + // Tiempo objetivo en milisegundos
+                "tiempo_cumplido INTEGER NOT NULL DEFAULT 0" + // Tiempo cumplido en milisegundos
                 ");";
         db.execSQL(tablaObjetivoDiario);
 

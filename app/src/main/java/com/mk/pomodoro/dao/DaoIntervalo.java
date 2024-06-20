@@ -25,6 +25,7 @@ public class DaoIntervalo {
         values.put("es_trabajo", intervalo.isEsTrabajo());
         values.put("fecha_inicio", intervalo.getFechaInicio());
         values.put("fecha_fin", intervalo.getFechaFin());
+        values.put("duracion_total", intervalo.getDuracionTotal());
 
         return db.insert("intervalo", null, values);
     }
@@ -40,8 +41,6 @@ public class DaoIntervalo {
         Cursor cursor = db.query("intervalo", null, selection, selectionArgs, null, null, null);
 
         while (cursor.moveToNext()) {
-
-
             int indexFechaInicio = cursor.getColumnIndex("fecha_inicio");
             int indexFechaFin = cursor.getColumnIndex("fecha_fin");
 
@@ -62,6 +61,31 @@ public class DaoIntervalo {
 
         return tiempoTotal;
     }
+
+    public long obtenerTiempoTotalTrabajoHoy() {
+        long tiempoTotal = 0;
+        String fechaHoy = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        // Seleccionar solo los intervalos de trabajo del día actual
+        String selection = "es_trabajo = ? AND fecha_inicio LIKE ?";
+        String[] selectionArgs = { "1", fechaHoy + "%" };
+
+        Cursor cursor = db.query("intervalo", null, selection, selectionArgs, null, null, null);
+
+        while (cursor.moveToNext()) {
+            int indexDuracionTotal = cursor.getColumnIndex("duracion_total");
+
+            if (indexDuracionTotal != -1) {
+                int duracionTotalSegundos = cursor.getInt(indexDuracionTotal);
+                tiempoTotal += duracionTotalSegundos;
+            }
+        }
+
+        cursor.close();
+
+        return tiempoTotal;
+    }
+
 
     private long convertirFechaAMillis(String fecha) {
         try {

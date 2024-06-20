@@ -83,12 +83,36 @@ public class MainActivity extends AppCompatActivity {
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
                 navegacionInferior.getMenu().getItem(position).setChecked(true);
+
+                // Cambiar el ícono de la opción a su versión "fill"
+                if (position == 0) {
+                    navegacionInferior.getMenu().getItem(0).setIcon(R.drawable.ic_home_fill);
+                } else if (position == 1) {
+                    navegacionInferior.getMenu().getItem(1).setIcon(R.drawable.ic_performance_fill);
+                } else if (position == 2) {
+                    navegacionInferior.getMenu().getItem(2).setIcon(R.drawable.ic_settings_fill);
+                }
+
+                // Cambiar los íconos de las otras opciones a su versión "outline"
+                for (int i = 0; i < navegacionInferior.getMenu().size(); i++) {
+                    MenuItem menuItem = navegacionInferior.getMenu().getItem(i);
+                    if (i != position) {
+                        if (menuItem.getItemId() == R.id.navegacion_inicio) {
+                            menuItem.setIcon(R.drawable.ic_home_outline);
+                        } else if (menuItem.getItemId() == R.id.navegacion_rendimiento) {
+                            menuItem.setIcon(R.drawable.ic_performance_outline);
+                        } else if (menuItem.getItemId() == R.id.navegacion_ajustes) {
+                            menuItem.setIcon(R.drawable.ic_settings_outline);
+                        }
+                    }
+                }
             }
         });
 
         // Recuperar el estado guardado del fragmento seleccionado
         seleccionarFragmentoGuardado(savedInstanceState);
 
+        // Opcion seleccionada por usuario
         navegacionInferior.setOnItemSelectedListener(item -> {
             if (item.getItemId() == R.id.navegacion_inicio) {
                 pagerVista.setCurrentItem(0);
@@ -161,9 +185,6 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             idElementoSeleccionado = savedInstanceState.getInt(ELEMENTO_SELECCIONADO, 0);
             MenuItem elementoSeleccionadoMenu = navegacionInferior.getMenu().findItem(idElementoSeleccionado);
-            if (elementoSeleccionadoMenu != null) {
-                pagerVista.setCurrentItem(elementoSeleccionadoMenu.getOrder());
-            }
         } else {
             // Si no hay un estado guardado, selecciona el primer fragmento
             pagerVista.setCurrentItem(0);

@@ -12,6 +12,10 @@
 
     <string name="pagina_rendimiento">Rendimiento</string>
     <string name="frag_ren_titulo">Rendimiento</string>
+    <string name="frag_ren_chip_hoy">Hoy</string>
+    <string name="frag_ren_chip_ayer">Ayer</string>
+    <string name="frag_ren_chip_esta_semana">Esta semana</string>
+    <string name="frag_ren_chip_este_mes">Este mes</string>
 
     <string name="pagina_ajustes">Ajustes</string>
     <string name="frag_aju_titulo">Ajustes</string>
@@ -45,4 +49,6 @@
     <string name="frag_aju_sec_sis_op_sonido_inter">Activar o Desactivar Sonido</string>
     <string name="frag_aju_sec_sis_op_vibracion">Vibración</string>
     <string name="frag_aju_sec_sis_op_vibracion_inter">Activar o Desactivar Vibración</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

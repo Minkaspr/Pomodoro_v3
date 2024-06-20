@@ -6,6 +6,7 @@ public class Intervalo {
     private boolean esTrabajo;
     private String fechaInicio;
     private String fechaFin;
+    private int duracionTotal;
 
     public Intervalo() {
     }
@@ -48,5 +49,13 @@ public class Intervalo {
 
     public void setFechaFin(String fechaFin) {
         this.fechaFin = fechaFin;
+    }
+
+    public int getDuracionTotal() {
+        return duracionTotal;
+    }
+
+    public void setDuracionTotal(int duracionTotal) {
+        this.duracionTotal = duracionTotal;
     }
 }
