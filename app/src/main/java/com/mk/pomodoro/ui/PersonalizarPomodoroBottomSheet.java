@@ -2,7 +2,6 @@ package com.mk.pomodoro.ui;
 
 import static android.content.Context.MODE_PRIVATE;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -27,6 +26,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.mk.pomodoro.R;
 import com.mk.pomodoro.ui.viewmodel.GestorPomodoroViewModel;
+import com.mk.pomodoro.util.ConstantesAppConfig;
 
 public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
 
@@ -36,6 +36,10 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
 
     private Boolean isConfirming = false;
     private boolean shouldShowBottomSheet = true;
+
+    private SharedPreferences preferencias;
+    private SharedPreferences.Editor actualizarPreferencias;
+    private GestorPomodoroViewModel gestorPomodoro;
 
     public interface OnCloseListener {
         void onClose();
@@ -60,17 +64,31 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
         return new PersonalizarPomodoroBottomSheet();
     }
 
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        preferencias = requireActivity().getSharedPreferences(ConstantesAppConfig.NOM_ARCHIVO_PREFERENCIAS, MODE_PRIVATE);
+        actualizarPreferencias = preferencias.edit();
+        gestorPomodoro = new ViewModelProvider(requireActivity()).get(GestorPomodoroViewModel.class);
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.bottom_sheet_personalizar_pomodoro, container, false);
+        return inflater.inflate(R.layout.bottom_sheet_personalizar_pomodoro, container, false);
+    }
 
-        tilTiempoTrabajo = view.findViewById(R.id.tilWorkingTime);
-        tietTiempoTrabajo = view.findViewById(R.id.tietWorkingTime);
-        tilTiempoDescanso = view.findViewById(R.id.tilBreakTime);
-        tietTiempoDescanso = view.findViewById(R.id.tietBreakTime);
-        btnCerrar = view.findViewById(R.id.btnClose);
-        btnConfirmar = view.findViewById(R.id.btnConfirm);
+    @Override
+    public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(vista, savedInstanceState);
+
+        tilTiempoTrabajo = vista.findViewById(R.id.tilWorkingTime);
+        tietTiempoTrabajo = vista.findViewById(R.id.tietWorkingTime);
+        tilTiempoDescanso = vista.findViewById(R.id.tilBreakTime);
+        tietTiempoDescanso = vista.findViewById(R.id.tietBreakTime);
+        btnCerrar = vista.findViewById(R.id.btnClose);
+        btnConfirmar = vista.findViewById(R.id.btnConfirm);
         btnCerrar.setOnClickListener(v -> new Handler().postDelayed(this::dismiss, 250));
 
         if (getArguments() != null) {
@@ -139,24 +157,21 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
             guardarTiempos(tiempoTrabajo, tiempoDescanso);
 
             // Actualizar los valores en el ViewModel
-            GestorPomodoroViewModel pomodoroType = new ViewModelProvider(requireActivity()).get(GestorPomodoroViewModel.class);
-            pomodoroType.setTiempoTrabajo(tiempoTrabajo);
-            pomodoroType.setTiempoDescanso(tiempoDescanso);
-            pomodoroType.setOpcionSeleccionada(4);
-            pomodoroType.setMostrarInfoPersonalizado(true);
-            pomodoroType.setConfigurationChanged(true);
+            gestorPomodoro.setTiempoTrabajo(tiempoTrabajo);
+            gestorPomodoro.setTiempoDescanso(tiempoDescanso);
+            gestorPomodoro.setOpcionSeleccionada(4);
+            gestorPomodoro.setMostrarInfoPersonalizado(true);
+            gestorPomodoro.setTiemposActualizados(true);
 
             // Recupera la última opción seleccionada de SharedPreferences
-            SharedPreferences sharedPreferences = getActivity().getSharedPreferences("minka", MODE_PRIVATE);
-            boolean snackbarMostrado = sharedPreferences.getBoolean("snackbarMostrado", false);
-            if (!snackbarMostrado){
-                pomodoroType.setMostrarSnackbar(true);
+            boolean estaSnackbarActivado = preferencias.getBoolean(ConstantesAppConfig.C_SNACKBAR_PERSONALIZADO, ConstantesAppConfig.V_SNACKBAR_PERSONALIZADO_B);
+            if (!estaSnackbarActivado){
+                gestorPomodoro.setMostrarSnackbar(true);
             }
             dismiss();
         });
-
-        return view;
     }
+
 
     @Override
     public void onDismiss(DialogInterface dialog) {
@@ -165,9 +180,7 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
         if (activity != null) {
             // Comprueba si el BottomSheet se está cerrando confirmando los cambios
             if (isConfirming) {
-                // Recupera la última opción seleccionada de SharedPreferences
-                SharedPreferences sharedPreferences = activity.getSharedPreferences("minka", MODE_PRIVATE);
-                int ultimaOpcionSeleccionada = sharedPreferences.getInt("opcionSeleccionada", 2);
+                int ultimaOpcionSeleccionada = preferencias.getInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, ConstantesAppConfig.V_OPCION_SELECCIONADA);
                 if (onOptionChangeListener != null) {
                     onOptionChangeListener.onOptionChange(ultimaOpcionSeleccionada);
                 }
@@ -202,17 +215,14 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
     private void guardarTiempos(int tiempoTrabajo, int tiempoDescanso) {
         Activity activity = getActivity();
         if (activity != null) {
-            // Actualizar los tiempos de trabajo y descanso, y también la opcion en el SharedPreferences
-            SharedPreferences sharedPreferences = activity.getSharedPreferences("minka", MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putInt("tiempoTrabajo", tiempoTrabajo);
-            editor.putInt("tiempoDescanso", tiempoDescanso);
-            editor.putInt("opcionSeleccionada", 4);
-            editor.putInt("tiempoTrabajoPersonalizado", tiempoTrabajo);
-            editor.putInt("tiempoDescansoPersonalizado", tiempoDescanso);
-            editor.putBoolean("isPersonalizadoConfigurado", true);
-            editor.putBoolean("mostrarInfoPersonalizado", true);
-            editor.apply();
+            actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_TRABAJO, tiempoTrabajo);
+            actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_DESCANSO, tiempoDescanso);
+            actualizarPreferencias.putInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, 4);
+            actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_TRABAJO_PERSONALIZADO, tiempoTrabajo);
+            actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_DESCANSO_PERSONALIZADO, tiempoDescanso);
+            actualizarPreferencias.putBoolean(ConstantesAppConfig.C_PERSONALIZADO_ACTIVADO, true);
+            actualizarPreferencias.putBoolean(ConstantesAppConfig.C_INFO_PERSONALIZADO, true);
+            actualizarPreferencias.apply();
         }
     }
 

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="72dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+    <androidx.appcompat.widget.AppCompatImageView
+        android:layout_width="54dp"
+        android:layout_height="54dp"
+        android:padding="2dp"
+        android:src="@drawable/ic_goal" />
+
+    <View
+        android:layout_width="12dp"
+        android:layout_height="match_parent" />
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        >
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tvNumeroSesion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/frag_ren_item_sesion_num"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp" />
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/ivSesionIncompleto"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:padding="2dp"
+                android:src="@drawable/ic_incomplete" />
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/ivSesionCompleto"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:padding="2dp"
+                android:src="@drawable/ic_complete" />
+            <View
+                android:layout_width="8dp"
+                android:layout_height="match_parent" />
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/tvDetalleSesion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/frag_ren_item_sesion_det"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                />
+        </androidx.appcompat.widget.LinearLayoutCompat>
+    </androidx.appcompat.widget.LinearLayoutCompat>
+</androidx.appcompat.widget.LinearLayoutCompat>

@@ -32,6 +32,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.mk.pomodoro.R;
 import com.mk.pomodoro.ui.adapter.GestorPaginasAdapter;
 import com.mk.pomodoro.ui.viewmodel.GestorPomodoroViewModel;
+import com.mk.pomodoro.util.ConexionAppDB;
+import com.mk.pomodoro.util.ConstantesAppConfig;
 import com.mk.pomodoro.util.PomodoroAppDB;
 
 public class MainActivity extends AppCompatActivity {
@@ -46,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private CharSequence nombreCanal;
     private String descripcionCanal;
 
-    private ViewPager2 pagerVista;
+    private ViewPager2 vpPaginas;
     private BottomNavigationView navegacionInferior;
     private GestorPomodoroViewModel gestorPomodoro;
 
@@ -62,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        aplicarConfiguraciones();
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         configurarInsets(findViewById(R.id.main));
@@ -71,32 +73,32 @@ public class MainActivity extends AppCompatActivity {
         // Registrar el BroadcastReceiver
         LocalBroadcastManager.getInstance(this).registerReceiver(temporizadorTerminadoReceiver, new IntentFilter(ACCION_TEMPORIZADOR_TERMINADO));
 
-        pagerVista = findViewById(R.id.pager_vista);
+        vpPaginas = findViewById(R.id.pager_vista);
         navegacionInferior = findViewById(R.id.navegacion_inferior);
         gestorPomodoro = new ViewModelProvider(this).get(GestorPomodoroViewModel.class);
         nombreCanal = getString(R.string.canal_not_nombre);
         descripcionCanal = getString(R.string.canal_not_descripcion);
 
-        pagerVista.setAdapter(new GestorPaginasAdapter(this));
-        pagerVista.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+        vpPaginas.setAdapter(new GestorPaginasAdapter(this));
+        vpPaginas.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
-            public void onPageSelected(int position) {
-                super.onPageSelected(position);
-                navegacionInferior.getMenu().getItem(position).setChecked(true);
+            public void onPageSelected(int posicion) {
+                super.onPageSelected(posicion);
+                navegacionInferior.getMenu().getItem(posicion).setChecked(true);
 
                 // Cambiar el ícono de la opción a su versión "fill"
-                if (position == 0) {
+                if (posicion == 0) {
                     navegacionInferior.getMenu().getItem(0).setIcon(R.drawable.ic_home_fill);
-                } else if (position == 1) {
+                } else if (posicion == 1) {
                     navegacionInferior.getMenu().getItem(1).setIcon(R.drawable.ic_performance_fill);
-                } else if (position == 2) {
+                } else if (posicion == 2) {
                     navegacionInferior.getMenu().getItem(2).setIcon(R.drawable.ic_settings_fill);
                 }
 
                 // Cambiar los íconos de las otras opciones a su versión "outline"
                 for (int i = 0; i < navegacionInferior.getMenu().size(); i++) {
                     MenuItem menuItem = navegacionInferior.getMenu().getItem(i);
-                    if (i != position) {
+                    if (i != posicion) {
                         if (menuItem.getItemId() == R.id.navegacion_inicio) {
                             menuItem.setIcon(R.drawable.ic_home_outline);
                         } else if (menuItem.getItemId() == R.id.navegacion_rendimiento) {
@@ -115,13 +117,13 @@ public class MainActivity extends AppCompatActivity {
         // Opcion seleccionada por usuario
         navegacionInferior.setOnItemSelectedListener(item -> {
             if (item.getItemId() == R.id.navegacion_inicio) {
-                pagerVista.setCurrentItem(0);
+                vpPaginas.setCurrentItem(0);
                 return true;
             } else if (item.getItemId() == R.id.navegacion_rendimiento) {
-                pagerVista.setCurrentItem(1);
+                vpPaginas.setCurrentItem(1);
                 return true;
             } else if (item.getItemId() == R.id.navegacion_ajustes) {
-                pagerVista.setCurrentItem(2);
+                vpPaginas.setCurrentItem(2);
                 return true;
             }
             return false;
@@ -138,6 +140,7 @@ public class MainActivity extends AppCompatActivity {
                 mostrarNotificacion();
             }
         });
+        aplicarConfiguraciones();
     }
 
     @Override
@@ -158,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         // Anular el registro del BroadcastReceiver
         LocalBroadcastManager.getInstance(this).unregisterReceiver(temporizadorTerminadoReceiver);
+        ConexionAppDB.cerrarConexionBD();
     }
 
     @Override
@@ -187,13 +191,13 @@ public class MainActivity extends AppCompatActivity {
             MenuItem elementoSeleccionadoMenu = navegacionInferior.getMenu().findItem(idElementoSeleccionado);
         } else {
             // Si no hay un estado guardado, selecciona el primer fragmento
-            pagerVista.setCurrentItem(0);
+            vpPaginas.setCurrentItem(0);
         }
     }
 
     private void aplicarConfiguraciones() {
-        SharedPreferences sharedPreferences = getSharedPreferences("minka", MODE_PRIVATE);
-        int tema = sharedPreferences.getInt("tema", 0);
+        SharedPreferences preferencias = getSharedPreferences(ConstantesAppConfig.NOM_ARCHIVO_PREFERENCIAS, MODE_PRIVATE);
+        int tema = preferencias.getInt(ConstantesAppConfig.C_TEMA, ConstantesAppConfig.V_TEMA_I);
         switch (tema) {
             case 0: // Sistema
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
@@ -235,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this.getApplicationContext(), MainActivity.ID_CANAL_SERVICIO_TEMPORIZADOR)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_logo_outline)
                 .setContentTitle(title)
                 .setContentText(text)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)

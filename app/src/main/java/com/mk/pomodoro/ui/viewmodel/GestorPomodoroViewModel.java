@@ -8,13 +8,15 @@ public class GestorPomodoroViewModel extends ViewModel {
     private final MutableLiveData<Integer> tiempoTrabajo = new MutableLiveData<>();
     private final MutableLiveData<Integer> tiempoDescanso = new MutableLiveData<>();
     private final MutableLiveData<Integer> opcionSeleccionada = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> configurationChanged = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> tiemposActualizados = new MutableLiveData<>(false);
     private final MutableLiveData<String> estadoTemporizador = new MutableLiveData<>();
     private final MutableLiveData<Boolean> temporizadorTerminado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> temporizadorIniciado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> temaCambiado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> mostrarInfoPersonalizado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> mostrarSnackbar = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> objetivoCambiado = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> datosTemporizadorActualizados = new MutableLiveData<>(false);
 
     public void setTiempoTrabajo(int tiempo) {
         tiempoTrabajo.setValue(tiempo);
@@ -40,12 +42,12 @@ public class GestorPomodoroViewModel extends ViewModel {
         return opcionSeleccionada;
     }
 
-    public LiveData<Boolean> isConfigurationChanged() {
-        return configurationChanged;
+    public void setTiemposActualizados(boolean tiemposActualizados) {
+        this.tiemposActualizados.setValue(tiemposActualizados);
     }
 
-    public void setConfigurationChanged(boolean configurationChanged) {
-        this.configurationChanged.setValue(configurationChanged);
+    public LiveData<Boolean> getTiemposActualizados() {
+        return tiemposActualizados;
     }
 
     public void setEstadoTemporizador(String estado) {
@@ -72,12 +74,12 @@ public class GestorPomodoroViewModel extends ViewModel {
         return temporizadorIniciado;
     }
 
-    public LiveData<Boolean> getTemaCambiado() {
-        return temaCambiado;
+    public void setTemaCambiado(boolean temaCambiado) {
+        this.temaCambiado.setValue(temaCambiado);
     }
 
-    public void setTemaCambiado(boolean cambiado) {
-        temaCambiado.setValue(cambiado);
+    public LiveData<Boolean> getTemaCambiado() {
+        return temaCambiado;
     }
 
     public void setMostrarInfoPersonalizado(boolean mostrar) {
@@ -94,5 +96,21 @@ public class GestorPomodoroViewModel extends ViewModel {
 
     public LiveData<Boolean> getMostrarSnackbar() {
         return mostrarSnackbar;
+    }
+
+    public void setObjetivoCambiado(boolean objetivoCambiado){
+        this.objetivoCambiado.setValue(objetivoCambiado);
+    }
+
+    public MutableLiveData<Boolean> getObjetivoCambiado() {
+        return objetivoCambiado;
+    }
+
+    public void setDatosTemporizadorActualizados(boolean datosActualizados) {
+        this.datosTemporizadorActualizados.setValue(datosActualizados);
+    }
+
+    public LiveData<Boolean> getDatosTemporizadorActualizados() {
+        return datosTemporizadorActualizados;
     }
 }

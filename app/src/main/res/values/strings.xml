@@ -17,6 +17,28 @@
     <string name="frag_ren_chip_esta_semana">Esta semana</string>
     <string name="frag_ren_chip_este_mes">Este mes</string>
 
+    <string name="frag_ren_item_sesion_num">Sesión #%d</string>
+    <string name="frag_ren_item_sesion_det">Detalles</string>
+
+    <string name="frag_ren_hoy_card_1_titulo">Objetivo Diario</string>
+    <string name="frag_ren_hoy_card_1_porc_avance">%1$s</string>
+    <string name="frag_ren_hoy_card_1_cont_text_1">Tu objetivo de trabajo es de %1$s</string>
+    <string name="frag_ren_hoy_card_1_cont_text_2">Llevas completadas %1$s</string>
+    <string name="frag_ren_hoy_card_1_cont_text_3">¡Comienza con fuerza!</string>
+
+    <string name="frag_ren_hoy_card_2_titulo">Productividad Diaria</string>
+    <string name="frag_ren_hoy_card_2_cont_text_1">Tu productividad actual</string>
+    <string name="frag_ren_hoy_card_2_cont_text_2">%1$s</string>
+    <string name="frag_ren_hoy_card_2_cont_text_3">Desafía tus límites</string>
+
+    <string name="frag_ren_hoy_card_3_titulo">Descanso</string>
+    <string name="frag_ren_hoy_card_3_cont_text_1">Hoy has descansado durante %1$s</string>
+
+    <string name="frag_ren_hoy_card_4_titulo">Sesiones</string>
+    <string name="frag_ren_hoy_card_4_cont_text_1">Has completado %d sesiones hoy.</string>
+
+    <string name="frag_ren_hoy_sec_mis_sesiones">Mis Sesiones</string>
+
     <string name="pagina_ajustes">Ajustes</string>
     <string name="frag_aju_titulo">Ajustes</string>
     <string name="frag_aju_sec_pomodoro">Pomodoro</string>
@@ -49,6 +71,18 @@
     <string name="frag_aju_sec_sis_op_sonido_inter">Activar o Desactivar Sonido</string>
     <string name="frag_aju_sec_sis_op_vibracion">Vibración</string>
     <string name="frag_aju_sec_sis_op_vibracion_inter">Activar o Desactivar Vibración</string>
-    <!-- TODO: Remove or change this placeholder text -->
+
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <!--
+     Tipos de Marcadores:
+        %s: Representa una cadena de texto (string).
+        %d: Representa un número entero (integer).
+        %f: Representa un número decimal (punto flotante o float).
+        %c: Representa un carácter (char).
+        %b: Representa un valor booleano (true o false).
+        %x: Representa un número entero en formato hexadecimal.
+     Posicionamiento para el orden
+     1$, 2$ ->  %1$s: Representa el primer argumento como una cadena de texto.
+                %2$d: Representa el segundo argumento como un número entero.
+     -->
 </resources>

@@ -2,7 +2,6 @@ package com.mk.pomodoro.ui;
 
 import static android.content.Context.MODE_PRIVATE;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -21,7 +20,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
@@ -29,27 +27,41 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 import com.mk.pomodoro.R;
+import com.mk.pomodoro.controller.Temporizador;
+import com.mk.pomodoro.dao.DaoIntervalo;
+import com.mk.pomodoro.dao.impl.DaoIntervaloImpl;
 import com.mk.pomodoro.ui.viewmodel.GestorPomodoroViewModel;
+import com.mk.pomodoro.util.ConstantesAppConfig;
+import com.mk.pomodoro.util.PomodoroAppDB;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class AjustesFragment extends Fragment implements PersonalizarPomodoroBottomSheet.OnOptionChangeListener {
 
-    private LinearLayoutCompat llcTema, llcSonido, llcVibracion, llcPersonalizadoInfo;
+    private LinearLayoutCompat llcTema, llcSonido, llcVibracion, llcPersonalizadoInfo, llObjetivoDiario;
     private ConstraintLayout clClasico, clExtendido, clCorto, clPersonalizado;
     private ImageView ivClasico, ivExtendido, ivCorto, ivPersonalizado;
-    private MaterialSwitch sSonido, sVibracion;
+    private MaterialSwitch sObjetivoDiario, sSonido, sVibracion;
 
-    private LinearLayoutCompat llObjetivoDiario;
-    private MaterialSwitch switchObjetivoDiario;
     private TextView tvObjetivoDiarioDescription;
     private String tiempoSeleccionado = "";
 
     private SharedPreferences preferencias;
     private SharedPreferences.Editor actualizarPreferencias;
     private GestorPomodoroViewModel gestorPomodoro;
+    private DaoIntervalo daoIntervalo;
 
+    boolean objetivoHabilitado, sonidoHabilitado, vibracionHabilitada;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        preferencias = requireActivity().getSharedPreferences(ConstantesAppConfig.NOM_ARCHIVO_PREFERENCIAS, MODE_PRIVATE);
+        actualizarPreferencias = preferencias.edit();
+        gestorPomodoro = new ViewModelProvider(requireActivity()).get(GestorPomodoroViewModel.class);
+        daoIntervalo = new DaoIntervaloImpl(getContext());
     }
 
     @Override
@@ -59,104 +71,64 @@ public class AjustesFragment extends Fragment implements PersonalizarPomodoroBot
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(vista, savedInstanceState);
 
-        llcPersonalizadoInfo = view.findViewById(R.id.llInfo);
-        llcTema = view.findViewById(R.id.llTema);
-        llcTema.setOnClickListener(this::mostrarDialogoTema);
-        llcSonido = view.findViewById(R.id.llSonido);
-        llcVibracion = view.findViewById(R.id.llVibracion);
+        clExtendido = vista.findViewById(R.id.clExtendido);
+        ivExtendido = vista.findViewById(R.id.ivExtendido);
+        clClasico = vista.findViewById(R.id.clClasico);
+        ivClasico = vista.findViewById(R.id.ivClasico);
+        clCorto = vista.findViewById(R.id.clCorto);
+        ivCorto = vista.findViewById(R.id.ivCorto);
+        clPersonalizado = vista.findViewById(R.id.clPersonalizado);
+        ivPersonalizado = vista.findViewById(R.id.ivPersonalizado);
+        llcPersonalizadoInfo = vista.findViewById(R.id.llInfo);
 
-        // Instanciar los elementos de la interfaz
-        llObjetivoDiario = view.findViewById(R.id.llObjetivoDiario);
-        switchObjetivoDiario = view.findViewById(R.id.switchObjetivoDiario);
-        tvObjetivoDiarioDescription = view.findViewById(R.id.tvObjetivoDiarioDescription);
+        llObjetivoDiario = vista.findViewById(R.id.llObjetivoDiario);
+        sObjetivoDiario = vista.findViewById(R.id.switchObjetivoDiario);
+        tvObjetivoDiarioDescription = vista.findViewById(R.id.tvObjetivoDiarioDescription);
 
-        preferencias = requireActivity().getSharedPreferences("minka", MODE_PRIVATE);
-        actualizarPreferencias = preferencias.edit();
-        gestorPomodoro = new ViewModelProvider(requireActivity()).get(GestorPomodoroViewModel.class);
+        llcTema = vista.findViewById(R.id.llTema);
+        llcSonido = vista.findViewById(R.id.llSonido);
+        sSonido = vista.findViewById(R.id.switchSonido);
+        llcVibracion = vista.findViewById(R.id.llVibracion);
+        sVibracion = vista.findViewById(R.id.switchVibracion);
 
-        // Asignar eventos onClick
-        llObjetivoDiario.setOnClickListener(v -> {
-            // Abrir el timepicker
-            abrirTimePicker();
-            Toast.makeText(getActivity(), "Toque para establecer un objetivo diario", Toast.LENGTH_SHORT).show();
-        });
+        // Configuracion Predeterminada
+        int opcionSeleccionada = preferencias.getInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, ConstantesAppConfig.V_OPCION_SELECCIONADA);
+        actualizarVisibilidad(opcionSeleccionada);
+        objetivoHabilitado = preferencias.getBoolean(ConstantesAppConfig.C_OBJETIVO, ConstantesAppConfig.V_OBJETIVO_B);
+        sObjetivoDiario.setChecked(objetivoHabilitado);
 
-        boolean mostrarInfoPersonalizado = preferencias.getBoolean("mostrarInfoPersonalizado", false);
-        gestorPomodoro.setMostrarInfoPersonalizado(mostrarInfoPersonalizado);
-        gestorPomodoro.getMostrarInfoPersonalizado().observe(getViewLifecycleOwner(), mostrar -> {
-            if (mostrar) {
-                llcPersonalizadoInfo.setVisibility(View.VISIBLE);
-            }
-        });
-
-        boolean snackbarMostrado = preferencias.getBoolean("snackbarMostrado", false);
-        gestorPomodoro.getMostrarSnackbar().observe(getViewLifecycleOwner(), mostrar -> {
-            if (mostrar && !snackbarMostrado) {
-                View rootView = requireActivity().findViewById(android.R.id.content);
-                Snackbar.make(rootView, "Mantén presionado para volver a editar los tiempos personalizados", Snackbar.LENGTH_LONG).show();
-                actualizarPreferencias.putBoolean("snackbarMostrado", true);
-                actualizarPreferencias.apply();
-            }
-        });
-
-        sSonido = view.findViewById(R.id.switchSonido);
-        sVibracion = view.findViewById(R.id.switchVibracion);
-        verificarSonidoVibracion();
         sSonido.setClickable(false);
         sVibracion.setClickable(false);
-
-        llcSonido.setOnClickListener(v -> {
-            boolean sonidoHabilitado = preferencias.getBoolean("sonido", true);
-
-            // Invierte el estado (activo a inactivo o viceversa)
-            sonidoHabilitado = !sonidoHabilitado;
-            actualizarSwitchSonido(sonidoHabilitado);
-        });
-
-        llcVibracion.setOnClickListener(v -> {
-            boolean vibracionHabilitada = preferencias.getBoolean("vibracion", true);
-
-            // Invierte el estado (activo a inactivo o viceversa)
-            vibracionHabilitada = !vibracionHabilitada;
-            actualizarSwitchVibracion(vibracionHabilitada);
-        });
-
-        ivClasico = view.findViewById(R.id.ivClasico);
-        ivExtendido = view.findViewById(R.id.ivExtendido);
-        ivCorto = view.findViewById(R.id.ivCorto);
-        ivPersonalizado = view.findViewById(R.id.ivPersonalizado);
-
-        clClasico = view.findViewById(R.id.clClasico);
-        clExtendido = view.findViewById(R.id.clExtendido);
-        clCorto = view.findViewById(R.id.clCorto);
-        clPersonalizado = view.findViewById(R.id.clPersonalizado);
+        sonidoHabilitado = preferencias.getBoolean(ConstantesAppConfig.C_SONIDO, ConstantesAppConfig.V_SONIDO_B);
+        sSonido.setChecked(sonidoHabilitado);
+        vibracionHabilitada = preferencias.getBoolean(ConstantesAppConfig.C_VIBRACION, ConstantesAppConfig.V_VIBRACION_B);
+        sVibracion.setChecked(vibracionHabilitada);
 
         clExtendido.setOnClickListener(v -> {
-            activarVisibilidad(View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
             guardarTiempos(45, 15);
             guardarOpcionSeleccionada(1);
+            activarVisibilidad(View.VISIBLE, View.INVISIBLE, View.INVISIBLE, View.INVISIBLE);
         });
         clClasico.setOnClickListener(v -> {
-            activarVisibilidad(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE);
-            guardarOpcionSeleccionada(2);
             guardarTiempos(25, 5);
+            guardarOpcionSeleccionada(2);
+            activarVisibilidad(View.INVISIBLE, View.VISIBLE, View.INVISIBLE, View.INVISIBLE);
         });
         clCorto.setOnClickListener(v -> {
-            activarVisibilidad(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE);
-            guardarOpcionSeleccionada(3);
             guardarTiempos(10, 2);
+            guardarOpcionSeleccionada(3);
+            activarVisibilidad(View.INVISIBLE, View.INVISIBLE, View.VISIBLE, View.INVISIBLE);
         });
-
         clPersonalizado.setOnClickListener(v -> {
-            boolean isPersonalizadoConfigurado = preferencias.getBoolean("isPersonalizadoConfigurado", false);
+            boolean estaPersonalizadoActivado = preferencias.getBoolean(ConstantesAppConfig.C_PERSONALIZADO_ACTIVADO, ConstantesAppConfig.V_PERSONALIZADO_B);
 
-            if (isPersonalizadoConfigurado) {
+            if (estaPersonalizadoActivado) {
                 // Si ya se han ingresado datos, recuperamos los datos y activamos la opción
-                int tiempoTrabajo = preferencias.getInt("tiempoTrabajoPersonalizado", 0);
-                int tiempoDescanso = preferencias.getInt("tiempoDescansoPersonalizado", 0);
+                int tiempoTrabajo = preferencias.getInt(ConstantesAppConfig.C_TIEMPO_TRABAJO_PERSONALIZADO, ConstantesAppConfig.V_TIEMPO_TRABAJO_PERSONALIZADO_I);
+                int tiempoDescanso = preferencias.getInt(ConstantesAppConfig.C_TIEMPO_DESCANSO_PERSONALIZADO, ConstantesAppConfig.V_TIEMPO_DESCANSO_PERSONALIZADO_I);
                 gestorPomodoro.setTiempoTrabajo(tiempoTrabajo);
                 gestorPomodoro.setTiempoDescanso(tiempoDescanso);
                 guardarOpcionSeleccionada(4);
@@ -165,18 +137,55 @@ public class AjustesFragment extends Fragment implements PersonalizarPomodoroBot
                 abrirBottomSheetDialog();
             }
         });
-
+        boolean estaSnackbarActivado = preferencias.getBoolean(ConstantesAppConfig.C_SNACKBAR_PERSONALIZADO, ConstantesAppConfig.V_SNACKBAR_PERSONALIZADO_B);
+        gestorPomodoro.getMostrarSnackbar().observe(getViewLifecycleOwner(), mostrar -> {
+            if (mostrar && !estaSnackbarActivado) {
+                View rootView = requireActivity().findViewById(android.R.id.content);
+                Snackbar.make(rootView, "Mantén presionado para volver a editar los tiempos personalizados", Snackbar.LENGTH_LONG).show();
+                actualizarPreferencias.putBoolean(ConstantesAppConfig.C_SNACKBAR_PERSONALIZADO, true);
+                actualizarPreferencias.apply();
+            }
+        });
+        boolean estaInfoActivado = preferencias.getBoolean(ConstantesAppConfig.C_INFO_PERSONALIZADO, ConstantesAppConfig.V_INFO_PERSONALIZADO_B);
+        gestorPomodoro.setMostrarInfoPersonalizado(estaInfoActivado);
+        gestorPomodoro.getMostrarInfoPersonalizado().observe(getViewLifecycleOwner(), mostrar -> {
+            if (mostrar) {
+                llcPersonalizadoInfo.setVisibility(View.VISIBLE);
+            }
+        });
         clPersonalizado.setOnLongClickListener(v -> {
             abrirBottomSheetDialog();
             return true;
         });
 
+        llObjetivoDiario.setOnClickListener(v -> abrirTimePicker());
 
-        Activity activity = getActivity();
-        if (activity != null) {
-            int opcionSeleccionada = preferencias.getInt("opcionSeleccionada", 2);
-            actualizarVisibilidad(opcionSeleccionada);
-        }
+        llcTema.setOnClickListener(this::mostrarDialogoTema);
+
+        llcSonido.setOnClickListener(v -> {
+            sonidoHabilitado = !sonidoHabilitado; // Invierte el estado (activo a inactivo o viceversa)
+            sSonido.setChecked(sonidoHabilitado);
+            actualizarPreferencias.putBoolean(ConstantesAppConfig.C_SONIDO, sonidoHabilitado);
+            actualizarPreferencias.apply();
+        });
+        llcVibracion.setOnClickListener(v -> {
+            vibracionHabilitada = !vibracionHabilitada;// Invierte el estado (activo a inactivo o viceversa)
+            sVibracion.setChecked(vibracionHabilitada);
+            actualizarPreferencias.putBoolean(ConstantesAppConfig.C_VIBRACION, vibracionHabilitada);
+            actualizarPreferencias.apply();
+        });
+        sObjetivoDiario.setOnCheckedChangeListener((vistaBoton, estaSeleccionado) -> {
+            int tiempoObjetivo = preferencias.getInt(ConstantesAppConfig.C_TIEMPO_OBJETIVO, ConstantesAppConfig.V_TIEMPO_OBJETIVO_I);
+            objetivoHabilitado = estaSeleccionado;
+            if (tiempoObjetivo != 0) {
+                gestorPomodoro.setObjetivoCambiado(true);
+                actualizarPreferencias.putBoolean(ConstantesAppConfig.C_OBJETIVO, objetivoHabilitado);
+                actualizarPreferencias.apply();
+            } else {
+                abrirTimePicker();
+            }
+        });
+
     }
 
     @Override
@@ -208,11 +217,6 @@ public class AjustesFragment extends Fragment implements PersonalizarPomodoroBot
         }
     }
 
-    // Método para actualizar el texto del objetivo diario
-    private void actualizarTextoObjetivoDiario(String texto) {
-        tvObjetivoDiarioDescription.setText(texto);
-    }
-
     private void abrirTimePicker() {
         MaterialTimePicker picker = new MaterialTimePicker.Builder()
                 .setTimeFormat(TimeFormat.CLOCK_24H)
@@ -221,60 +225,115 @@ public class AjustesFragment extends Fragment implements PersonalizarPomodoroBot
                 .setTitleText("Seleccione el tiempo objetivo")
                 .build();
 
-        picker.addOnPositiveButtonClickListener(dialog -> {
-            int hour = picker.getHour();
-            int minute = picker.getMinute();
+        String mensajeInformativo = "El tiempo máximo es de 12 horas.";
 
-            if (hour > 12 || (hour == 12 && minute > 0)) {
-                new MaterialAlertDialogBuilder(requireContext())
-                        .setTitle("Error")
-                        .setMessage("El tiempo máximo es de 12 horas")
-                        .setPositiveButton("Aceptar", null)
-                        .show();
-                return;
-            }
+        String fechaHoy = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        int tiempoTotalMilisegundos = daoIntervalo.obtenerTiempoTotalPorFecha(true,fechaHoy);
 
-            tiempoSeleccionado = hour + "h " + minute + "min";
-            switchObjetivoDiario.setChecked(true); // Activar el switch
-            actualizarTextoObjetivoDiario("Objetivo diario establecido: " + tiempoSeleccionado + "\n• Mantener presionado para editar");
-        });
+        if (tiempoTotalMilisegundos > 0) {
+            mensajeInformativo += "\n\nPara superarte, elige un tiempo mayor al trabajo de hoy.";
+        } else {
+            mensajeInformativo += "\n\n¡Empieza con un buen tiempo! Elige un objetivo para hoy.";
+        }
 
-        picker.show(getParentFragmentManager(), "MATERIAL_TIME_PICKER");
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Información")
+                .setMessage(mensajeInformativo)
+                .setPositiveButton("Entendido", (dialogo, boton) -> {
+
+                    picker.addOnPositiveButtonClickListener(dialogoInterno  -> {
+                        int horas = picker.getHour();
+                        int minutos = picker.getMinute();
+
+                        if (horas > 12 || (horas == 12 && minutos > 0)) {
+                            new MaterialAlertDialogBuilder(requireContext())
+                                    .setTitle("Error")
+                                    .setMessage("El tiempo máximo es de 12 horas")
+                                    .setPositiveButton("Aceptar", null)
+                                    .show();
+                            return;
+                        }
+                        tiempoSeleccionado = horas + "h " + minutos + "min";
+                        tvObjetivoDiarioDescription.setText("Objetivo diario establecido: " + tiempoSeleccionado + "\n• Mantener presionado para editar");
+                        sObjetivoDiario.setChecked(true); // Activar el switch
+                        int tiempoEnMilisegundos = (horas * 60 + minutos) * 60 * 1000;
+                        gestorPomodoro.setObjetivoCambiado(true);
+
+                        actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_OBJETIVO, tiempoEnMilisegundos);
+                        actualizarPreferencias.putBoolean(ConstantesAppConfig.C_OBJETIVO, true);
+                        actualizarPreferencias.apply();
+                    });
+                    picker.show(getParentFragmentManager(), "MATERIAL_TIME_PICKER");
+                })
+                .show();
     }
+
+
+    /*private void mostrarDialogoTema(View v) {
+        String[] temas = {"Sistema", "Claro", "Oscuro"};
+
+        int temaActual = preferencias.getInt(ConstantesAppConfig.C_TEMA, ConstantesAppConfig.V_TEMA_I);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Tema")
+                .setSingleChoiceItems(temas, temaActual, null)
+                .setPositiveButton("Aplicar", (dialogInterface, i) -> {
+                    int selectedPosition = ((AlertDialog) dialogInterface).getListView().getCheckedItemPosition();
+
+                    if (selectedPosition != -1) {
+                        actualizarTema(selectedPosition);
+                    }
+                    v.setPressed(false);
+                })
+                .setNegativeButton("Cancelar", (dialogInterface, i) -> v.setPressed(false))
+                .show();
+    }*/
 
     private void mostrarDialogoTema(View v) {
         String[] temas = {"Sistema", "Claro", "Oscuro"};
 
-        Context context = getContext();
-        if (context != null) {
-            // Obtener la preferencia de tema actual
-            int temaActual = preferencias.getInt("tema", 0);
-
-            // Crear un nuevo diálogo
-            new MaterialAlertDialogBuilder(context)
-                    .setTitle("Tema")
-                    .setSingleChoiceItems(temas, temaActual, null)
-                    .setPositiveButton("Aplicar", (dialogInterface, i) -> {
-                        int selectedPosition = ((AlertDialog) dialogInterface).getListView().getCheckedItemPosition();
-
-                        if (selectedPosition != -1) {
-                            actualizarTema(selectedPosition);
-                        }
-                        v.setPressed(false);
-                    })
-                    .setNegativeButton("Cancelar", (dialogInterface, i) -> v.setPressed(false))
-                    .show();
+        int temaActual = preferencias.getInt(ConstantesAppConfig.C_TEMA, ConstantesAppConfig.V_TEMA_I);
+        Boolean temporizadorIniciado = gestorPomodoro.getTemporizadorIniciado().getValue();
+        if (Boolean.TRUE.equals(temporizadorIniciado)) {
+            mostrarDialogoInformacion(v, temas, temaActual);
+        } else {
+            mostrarDialogoTemaSeleccionado(temas, temaActual);
         }
     }
 
+    private void mostrarDialogoInformacion(View v, String[] temas, int temaActual) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Información")
+                .setMessage("Cambiar de tema detendrá el temporizador en curso. ¿Deseas continuar?")
+                .setPositiveButton("Continuar", (dialogInterface, i) -> {
+                    // Aquí puedes mostrar el diálogo del tema
+                    mostrarDialogoTemaSeleccionado(temas, temaActual);
+                })
+                .setNegativeButton("Volver", (dialogInterface, i) -> {
+                    // No hagas nada si el usuario selecciona "Volver"
+                })
+                .show();
+    }
+
+    private void mostrarDialogoTemaSeleccionado(String[] temas, int temaActual) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Tema")
+                .setSingleChoiceItems(temas, temaActual, null)
+                .setPositiveButton("Aplicar", (dialogInterface, i) -> {
+                    int selectedPosition = ((AlertDialog) dialogInterface).getListView().getCheckedItemPosition();
+                    if (selectedPosition != -1) {
+                        actualizarTema(selectedPosition);
+                    }
+                })
+                .setNegativeButton("Cancelar", (dialogInterface, i) -> {
+                    // No hagas nada si el usuario selecciona "Cancelar"
+                })
+                .show();
+    }
+
+
+
     private void actualizarTema(int temaSeleccionado) {
-
-        gestorPomodoro.setTemaCambiado(true);
-
-        // Guardar la preferencia de tema
-        actualizarPreferencias.putInt("tema", temaSeleccionado);
-        actualizarPreferencias.apply();
-
         switch (temaSeleccionado) {
             case 0: // Sistema
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
@@ -286,34 +345,27 @@ public class AjustesFragment extends Fragment implements PersonalizarPomodoroBot
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
                 break;
         }
+        gestorPomodoro.setTemaCambiado(true);
+
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_TEMA, temaSeleccionado);
+        actualizarPreferencias.apply();
     }
 
     private void guardarOpcionSeleccionada(int opcion) {
-        Activity activity = getActivity();
-        if (activity != null) {
-            // Actualizar la opción seleccionada en el SharedPreferences
-            actualizarPreferencias.putInt("opcionSeleccionada", opcion);
+        gestorPomodoro.setOpcionSeleccionada(opcion);
 
-            // Actualiza los valores en el ViewModel
-            gestorPomodoro.setOpcionSeleccionada(opcion);
-
-            actualizarPreferencias.apply();
-        }
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, opcion);
+        actualizarPreferencias.apply();
     }
 
     private void guardarTiempos(int tiempoTrabajo, int tiempoDescanso) {
-        Activity activity = getActivity();
-        if (activity != null) {
-            // Actualizar los tiempos de trabajo y descanso en el SharedPreferences
-            actualizarPreferencias.putInt("tiempoTrabajo", tiempoTrabajo);
-            actualizarPreferencias.putInt("tiempoDescanso", tiempoDescanso);
+        gestorPomodoro.setTiempoTrabajo(tiempoTrabajo);
+        gestorPomodoro.setTiempoDescanso(tiempoDescanso);
+        gestorPomodoro.setTiemposActualizados(true);
 
-            // Actualiza los valores en el ViewModel
-            gestorPomodoro.setTiempoTrabajo(tiempoTrabajo);
-            gestorPomodoro.setTiempoDescanso(tiempoDescanso);
-            gestorPomodoro.setConfigurationChanged(true);
-            actualizarPreferencias.apply();
-        }
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_TRABAJO, tiempoTrabajo);
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_DESCANSO, tiempoDescanso);
+        actualizarPreferencias.apply();
     }
 
     private void simularClick(int opcion) {
@@ -350,35 +402,12 @@ public class AjustesFragment extends Fragment implements PersonalizarPomodoroBot
         }
     }
 
-    private void verificarSonidoVibracion(){
-        boolean sonidoHabilitado = preferencias.getBoolean("sonido", true);
-        boolean vibracionHabilitada = preferencias.getBoolean("vibracion", true);
-        if (sSonido != null) {
-            sSonido.setChecked(sonidoHabilitado);
-        }
-        if (sVibracion != null) {
-            sVibracion.setChecked(vibracionHabilitada);
-        }
-    }
-
-    private void actualizarSwitchSonido(boolean activarSonido) {
-        sSonido.setChecked(activarSonido);
-        actualizarPreferencias.putBoolean("sonido", activarSonido);
-        actualizarPreferencias.apply();
-    }
-
-    private void actualizarSwitchVibracion(boolean activarVibracion) {
-        sVibracion.setChecked(activarVibracion);
-        actualizarPreferencias.putBoolean("vibracion", activarVibracion);
-        actualizarPreferencias.apply();
-    }
-
     private void abrirBottomSheetDialog() {
         PersonalizarPomodoroBottomSheet bottomSheet = PersonalizarPomodoroBottomSheet.newInstance();
-        boolean isPersonalizadoConfigurado = preferencias.getBoolean("isPersonalizadoConfigurado", false);
-        if (isPersonalizadoConfigurado) {
-            int tiempoTrabajo = preferencias.getInt("tiempoTrabajoPersonalizado", 0);
-            int tiempoDescanso = preferencias.getInt("tiempoDescansoPersonalizado", 0);
+        boolean estaPersonalizadoActivado = preferencias.getBoolean(ConstantesAppConfig.C_PERSONALIZADO_ACTIVADO, ConstantesAppConfig.V_PERSONALIZADO_B);
+        if (estaPersonalizadoActivado) {
+            int tiempoTrabajo = preferencias.getInt(ConstantesAppConfig.C_TIEMPO_TRABAJO_PERSONALIZADO, ConstantesAppConfig.V_TIEMPO_TRABAJO_PERSONALIZADO_I);
+            int tiempoDescanso = preferencias.getInt(ConstantesAppConfig.C_TIEMPO_DESCANSO_PERSONALIZADO, ConstantesAppConfig.V_TIEMPO_DESCANSO_PERSONALIZADO_I);
 
             Bundle args = new Bundle();
             args.putInt("tiempoTrabajo", tiempoTrabajo);
@@ -387,12 +416,8 @@ public class AjustesFragment extends Fragment implements PersonalizarPomodoroBot
         }
         bottomSheet.setOnOptionChangeListener(this);
         bottomSheet.setOnCloseListener(() -> {
-            Activity activity = getActivity();
-            if (activity != null) {
-                // SharedPreferences sharedPreferences = activity.getSharedPreferences("minka", MODE_PRIVATE);
-                int ultimaOpcionSeleccionada = preferencias.getInt("opcionSeleccionada", 2);
-                simularClick(ultimaOpcionSeleccionada);
-            }
+            int ultimaOpcionSeleccionada = preferencias.getInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, ConstantesAppConfig.V_OPCION_SELECCIONADA);
+            simularClick(ultimaOpcionSeleccionada);
         });
         if (!bottomSheet.isAdded() && bottomSheet.getShouldShowBottomSheet()) {
             bottomSheet.show(getParentFragmentManager(), "PersonalizarPomodoroBottomSheet");

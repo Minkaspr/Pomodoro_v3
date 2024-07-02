@@ -2,14 +2,14 @@ package com.mk.pomodoro.ui;
 
 import static android.content.Context.MODE_PRIVATE;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,15 +28,22 @@ import com.google.android.material.tabs.TabLayout;
 import com.mk.pomodoro.R;
 import com.mk.pomodoro.controller.Temporizador;
 import com.mk.pomodoro.dao.DaoIntervalo;
+import com.mk.pomodoro.dao.DaoSesion;
 import com.mk.pomodoro.dao.DaoTipoPomodoro;
+import com.mk.pomodoro.dao.impl.DaoIntervaloImpl;
+import com.mk.pomodoro.dao.impl.DaoSesionImpl;
+import com.mk.pomodoro.dao.impl.DaoTipoPomodoroImpl;
 import com.mk.pomodoro.model.Intervalo;
+import com.mk.pomodoro.model.SesionDTO;
 import com.mk.pomodoro.model.TipoPomodoro;
 import com.mk.pomodoro.ui.viewmodel.GestorPomodoroViewModel;
-import com.mk.pomodoro.util.PomodoroAppDB;
+import com.mk.pomodoro.util.ConstantesAppConfig;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class InicioFragment extends Fragment {
 
@@ -50,7 +58,6 @@ public class InicioFragment extends Fragment {
 
     private boolean intervaloActivado = false;
     private long fechaInicio;
-    private long fechaFin;
     private long tiempoMuertoAcumulado = 0;
     private long ultimoTiempoPausa = 0;
 
@@ -61,15 +68,33 @@ public class InicioFragment extends Fragment {
     private NotificationManagerCompat gestorNotificaciones;
     private MediaPlayer reproductorAlarma;
 
+    private DaoTipoPomodoro daoTipoPomodoro;
+    private DaoIntervalo daoIntervalo;
+    private DaoSesion daoSesion;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        preferencias = requireActivity().getSharedPreferences(ConstantesAppConfig.NOM_ARCHIVO_PREFERENCIAS, MODE_PRIVATE);
+        actualizarPreferencias = preferencias.edit();
+        gestorPomodoro = new ViewModelProvider(requireActivity()).get(GestorPomodoroViewModel.class);
+        gestorNotificaciones = NotificationManagerCompat.from(requireActivity());
+
+        daoTipoPomodoro = new DaoTipoPomodoroImpl(getContext());
+        daoIntervalo = new DaoIntervaloImpl(getContext());
+        daoSesion = new DaoSesionImpl(getContext());
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View vista = inflater.inflate(R.layout.fragment_inicio, container, false);
+        return inflater.inflate(R.layout.fragment_inicio, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(vista, savedInstanceState);
 
         layoutPestanas = vista.findViewById(R.id.tlOpcionesTiempo);
         tiempo = vista.findViewById(R.id.tvTiempo);
@@ -81,39 +106,41 @@ public class InicioFragment extends Fragment {
         botonContinuar = vista.findViewById(R.id.btnContinuar);
         reproductorAlarma = MediaPlayer.create(getActivity(), R.raw.kalimba);
 
-        preferencias = requireActivity().getSharedPreferences("minka", MODE_PRIVATE);
-        actualizarPreferencias = preferencias.edit();
-        gestorPomodoro = new ViewModelProvider(requireActivity()).get(GestorPomodoroViewModel.class);
-        gestorNotificaciones = NotificationManagerCompat.from(requireActivity());
+        // Configuracion Predeterminada
+        tiempoTrabajo = preferencias.getInt(ConstantesAppConfig.C_TIEMPO_TRABAJO, ConstantesAppConfig.V_TIEMPO_TRABAJO_I);
+        tiempoDescanso = preferencias.getInt(ConstantesAppConfig.C_TIEMPO_DESCANSO, ConstantesAppConfig.V_TIEMPO_DESCANSO_I);
+        gestorPomodoro.setEstadoTemporizador("Trabajo");
+        int pestanaSeleccionada = preferencias.getInt(ConstantesAppConfig.C_PESTANA_SELECCIONADA, ConstantesAppConfig.V_PESTANA_SELECCIONADA);
+        TabLayout.Tab tab = layoutPestanas.getTabAt(pestanaSeleccionada);
+        if (tab != null) {
+            tab.select();
+        }
+        prepararTemporizador((pestanaSeleccionada == 0 ? tiempoTrabajo : tiempoDescanso) * 60);
 
         gestorPomodoro.getTemaCambiado().observe(getViewLifecycleOwner(), cambiado -> {
             if (cambiado) {
                 reiniciarTemporizadorYActualizarBotones();
                 gestorPomodoro.setTemaCambiado(false);
+                gestorPomodoro.setTemporizadorIniciado(false);
             }
         });
-        gestorPomodoro.setEstadoTemporizador("Trabajo");
-
-        tiempoTrabajo = preferencias.getInt("tiempoTrabajo", 25 );
-        tiempoDescanso = preferencias.getInt("tiempoDescanso", 5 );
 
         layoutPestanas.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 // Actualiza los valores en el ViewModel
-                int position = tab.getPosition();
+                int posicion = tab.getPosition();
                 iniciarTemporizador = false;
-                if (position == 0) {
+                if (posicion == 0) {
                     prepararTemporizador(tiempoTrabajo * 60);
                     gestorPomodoro.setEstadoTemporizador("Trabajo");
-                    actualizarPreferencias.putInt("tab_position", position);
-                    actualizarPreferencias.apply();
-                } else if (position == 1) {
+                } else if (posicion == 1) {
                     prepararTemporizador(tiempoDescanso * 60);
                     gestorPomodoro.setEstadoTemporizador("Descanso");
-                    actualizarPreferencias.putInt("tab_position", position);
-                    actualizarPreferencias.apply();
                 }
+                actualizarPreferencias.putInt(ConstantesAppConfig.C_PESTANA_SELECCIONADA, posicion);
+                actualizarPreferencias.apply();
+
                 gestorPomodoro.setTemporizadorTerminado(false);
                 botonIniciar.setVisibility(View.VISIBLE);
                 botonPausar.setVisibility(View.GONE);
@@ -137,15 +164,8 @@ public class InicioFragment extends Fragment {
                 // Cancelar la notificación
                 gestorNotificaciones.cancel(1);
                 iniciarTemporizador = false;
-                if (intervaloActivado) {
-                    fechaFin = System.currentTimeMillis(); // Guardar la hora actual como fin
-                    long duracionTotal = fechaFin - fechaInicio; // Calcular la duración total del intervalo
-                    long duracionActiva = duracionTotal - tiempoMuertoAcumulado; // Restar el tiempo muerto para obtener la duración activa
-                    intervaloActivado = false;
-                    guardarIntervaloEnBD(fechaInicio, fechaFin, duracionActiva);
-                    ultimoTiempoPausa = 0;
-                    tiempoMuertoAcumulado = 0;
-                }
+                gestorPomodoro.setTemporizadorIniciado(false);
+                finalizarIntervalo();
             }
             @Override
             public void onTabUnselected(TabLayout.Tab tab) {}
@@ -154,31 +174,12 @@ public class InicioFragment extends Fragment {
             public void onTabReselected(TabLayout.Tab tab) {}
         });
 
-        // Recupera la posición de la pestaña desde SharedPreferences
-        int position = preferencias.getInt("tab_position", 0);
-
-        // Selecciona la pestaña correspondiente
-        TabLayout.Tab tab = layoutPestanas.getTabAt(position);
-        if (tab != null) {
-            tab.select();
-        }
-
-        prepararTemporizador((position == 0 ? tiempoTrabajo : tiempoDescanso) * 60);
-
         botonDetener.setOnClickListener(v -> {
             reiniciarTemporizadorYActualizarBotones();
             gestorNotificaciones.cancel(1);
             iniciarTemporizador = false;
             gestorPomodoro.setTemporizadorIniciado(false);
-            if (intervaloActivado) {
-                fechaFin = System.currentTimeMillis(); // Guardar la hora actual como fin
-                long duracionTotal = fechaFin - fechaInicio; // Calcular la duración total del intervalo
-                long duracionActiva = duracionTotal - tiempoMuertoAcumulado; // Restar el tiempo muerto para obtener la duración activa
-                intervaloActivado = false;
-                guardarIntervaloEnBD(fechaInicio, fechaFin, duracionActiva);
-                ultimoTiempoPausa = 0;
-                tiempoMuertoAcumulado = 0;
-            }
+            finalizarIntervalo();
         });
         botonIniciar.setOnClickListener(v -> {
             iniciarTemporizador = true;
@@ -226,27 +227,15 @@ public class InicioFragment extends Fragment {
             // Cancelar la notificación
             gestorNotificaciones.cancel(1);
             iniciarTemporizador = false;
-
-            if (intervaloActivado) {
-                fechaFin = System.currentTimeMillis(); // Guardar la hora actual como fin
-                long duracionTotal = fechaFin - fechaInicio; // Calcular la duración total del intervalo
-                long duracionActiva = duracionTotal - tiempoMuertoAcumulado; // Restar el tiempo muerto para obtener la duración activa
-                intervaloActivado = false;
-                guardarIntervaloEnBD(fechaInicio, fechaFin, duracionActiva);
-                ultimoTiempoPausa = 0;
-                tiempoMuertoAcumulado = 0;
-            }
         });
-
-        return vista;
     }
 
     @Override
     public void onResume() {
         super.onResume();
         // Observa los cambios en ViewModel
-        gestorPomodoro.isConfigurationChanged().observe(getViewLifecycleOwner(), configurationChanged -> {
-            if (configurationChanged) {
+        gestorPomodoro.getTiemposActualizados().observe(getViewLifecycleOwner(), tiemposActualizados -> {
+            if (tiemposActualizados) {
                 gestorPomodoro.getTiempoTrabajo().observe(getViewLifecycleOwner(), nuevoTiempoTrabajo -> {
                     // Actualiza tu variable tiempoTrabajo con el nuevo tiempo de trabajo
                     tiempoTrabajo = nuevoTiempoTrabajo;
@@ -268,7 +257,7 @@ public class InicioFragment extends Fragment {
                         reiniciarTemporizadorYActualizarBotones();
                     }
                 });
-                gestorPomodoro.setConfigurationChanged(false);
+                gestorPomodoro.setTiemposActualizados(false);
             }
         });
     }
@@ -280,21 +269,19 @@ public class InicioFragment extends Fragment {
             reproductorAlarma.release();
             reproductorAlarma = null;
         }
-        if (intervaloActivado) {
-            fechaFin = System.currentTimeMillis(); // Guardar la hora actual como fin
-            long duracionTotal = fechaFin - fechaInicio; // Calcular la duración total del intervalo
-            long duracionActiva = duracionTotal - tiempoMuertoAcumulado; // Restar el tiempo muerto para obtener la duración activa
-            intervaloActivado = false;
-            guardarIntervaloEnBD(fechaInicio, fechaFin, duracionActiva);
-            ultimoTiempoPausa = 0;
-            tiempoMuertoAcumulado = 0;
-        }
+        finalizarIntervalo();
     }
 
     private void prepararTemporizador(int segundos) {
+        System.out.println(segundos);
         if (temporizador != null) {
             temporizador.destruirTemporizador();
         }
+        // Iniciamos el temporizador solo si iniciarTemporizador es verdadero
+        if (iniciarTemporizador) {
+            temporizador.iniciarTemporizador();
+        }
+
         barraProgresoCircular.setMax(segundos);
         temporizador = new Temporizador(segundos * 1000L, 1000);
         temporizador.setEscuchadorTick(millisUntilFinished -> {
@@ -307,34 +294,30 @@ public class InicioFragment extends Fragment {
 
         temporizador.setEscuchadorFinalizacion(() -> {
             tiempo.setText(getString(R.string.frag_ini_tiempo_predeterminado));
-            Activity activity = getActivity();
-            if (activity != null) {
-                // Leer la preferencia del usuario para el sonido y vibración
-                preferencias = getActivity().getSharedPreferences("minka", MODE_PRIVATE);
-                boolean sonidoHabilitado = preferencias.getBoolean("sonido", true);
-                boolean vibracionHabilitada = preferencias.getBoolean("vibracion", true);
-                if (sonidoHabilitado) {
-                    // Reproduce el sonido de la alarma.
-                    reproductorAlarma.start();
-                    // Configura el MediaPlayer para que se repita.
-                    reproductorAlarma.setLooping(true);
-                }
-                if (vibracionHabilitada) {
-                    // Activa la vibración en bucle con un patrón de 1 segundo de vibración y 1 segundo de pausa
-                    Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
-                    if (vibrator != null) {
-                        long[] pattern = {0, 1000, 1000}; // Patrón: 0 ms de espera, 1000 ms de vibración, 1000 ms de pausa
-                        vibrator.vibrate(pattern, 0); // El segundo parámetro indica en qué índice del patrón comenzar (0 para repetir desde el principio)
-                    }
-                }
-
-                // Actualiza los valores en el ViewModel
-                gestorPomodoro.setTemporizadorTerminado(true);
-                gestorPomodoro.setTemporizadorIniciado(false);
-                // Enviar un broadcast para indicar que el temporizador ha terminado
-                Intent intent = new Intent("com.mk.pomodoro.TEMPORIZADOR_TERMINADO");
-                LocalBroadcastManager.getInstance(activity).sendBroadcast(intent);
+            // Leer la preferencia del usuario para el sonido y vibración
+            boolean sonidoHabilitado = preferencias.getBoolean(ConstantesAppConfig.C_SONIDO, ConstantesAppConfig.V_SONIDO_B);
+            boolean vibracionHabilitada = preferencias.getBoolean(ConstantesAppConfig.C_VIBRACION, ConstantesAppConfig.V_VIBRACION_B);
+            if (sonidoHabilitado) {
+                // Reproduce el sonido de la alarma.
+                reproductorAlarma.start();
+                // Configura el MediaPlayer para que se repita.
+                reproductorAlarma.setLooping(true);
             }
+            if (vibracionHabilitada) {
+                // Activa la vibración en bucle con un patrón de 1 segundo de vibración y 1 segundo de pausa
+                Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+                if (vibrator != null) {
+                    long[] pattern = {0, 1000, 1000}; // Patrón: 0 ms de espera, 1000 ms de vibración, 1000 ms de pausa
+                    vibrator.vibrate(pattern, 0); // El segundo parámetro indica en qué índice del patrón comenzar (0 para repetir desde el principio)
+                }
+            }
+            // Actualiza los valores en el ViewModel
+            gestorPomodoro.setTemporizadorTerminado(true);
+            gestorPomodoro.setTemporizadorIniciado(false);
+
+            // Enviar un broadcast para indicar que el temporizador ha terminado
+            Intent intent = new Intent("com.mk.pomodoro.TEMPORIZADOR_TERMINADO");
+            LocalBroadcastManager.getInstance(requireActivity()).sendBroadcast(intent);
 
             // Oculta los otros botones.
             botonIniciar.setVisibility(View.GONE);
@@ -343,16 +326,14 @@ public class InicioFragment extends Fragment {
             botonDetener.setVisibility(View.GONE);
             // Muestra el botón para detener la alarma.
             botonDetenerAlarma.setVisibility(View.VISIBLE);
+            finalizarIntervalo();
         });
 
         // Mostramos el tiempo inicial sin iniciar el temporizador
         int segundosRestantes = segundos;
         tiempo.setText(String.format(Locale.getDefault(), "%02d:%02d", segundosRestantes / 60, segundosRestantes % 60));
         barraProgresoCircular.setProgress(segundosRestantes);
-        // Iniciamos el temporizador solo si iniciarTemporizador es verdadero
-        if (iniciarTemporizador) {
-            temporizador.iniciarTemporizador();
-        }
+
     }
 
     private void reiniciarTemporizadorYActualizarBotones() {
@@ -361,32 +342,113 @@ public class InicioFragment extends Fragment {
         botonPausar.setVisibility(View.GONE);
         botonContinuar.setVisibility(View.GONE);
         botonDetener.setVisibility(View.GONE);
+        finalizarIntervalo();
     }
 
-    private void guardarIntervaloEnBD(long inicio, long fin, long duracionActiva) {
-        // Obtener la instancia de SQLiteDatabase
-        PomodoroAppDB dbHelper = new PomodoroAppDB(getContext());
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
+    private void finalizarIntervalo() {
+        if (intervaloActivado) {
+            long fechaFin = System.currentTimeMillis();
+            long duracionTotal = fechaFin - fechaInicio;
+            long duracionActiva = duracionTotal - tiempoMuertoAcumulado;
 
-        int opcionSeleccionada = preferencias.getInt("opcionSeleccionada", 2);
-        int position = preferencias.getInt("tab_position", 0);
-        boolean esTrabajo = position == 0;
+            intervaloActivado = false;
+            guardarIntervalo(fechaInicio, fechaFin, duracionActiva);
+            evaluarIntervalo();
+            ultimoTiempoPausa = 0;
+            tiempoMuertoAcumulado = 0;
+            gestorPomodoro.setDatosTemporizadorActualizados(true);
+        }
+    }
+    private void guardarIntervalo(long inicio, long fin, long duracionActiva) {
+
+        int opcionSeleccionada = preferencias.getInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, ConstantesAppConfig.V_OPCION_SELECCIONADA);
+        int pestanaSeleccionada = preferencias.getInt(ConstantesAppConfig.C_PESTANA_SELECCIONADA, ConstantesAppConfig.V_PESTANA_SELECCIONADA);
+        boolean esTrabajo = pestanaSeleccionada == 0; //pestanaSeleccionada == 0 ? esTrabajo = true : esTrabajo = false)
 
         // Crear un objeto Intervalo con las fechas de inicio y fin
         Intervalo intervalo = new Intervalo();
-        intervalo.setTipoId(obtenerIdTipoPomodoro(opcionSeleccionada,db));
+        intervalo.setTipoId(obtenerIdTipoPomodoro(opcionSeleccionada));
         intervalo.setEsTrabajo(esTrabajo);
         intervalo.setFechaInicio(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date(inicio)));
         intervalo.setFechaFin(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date(fin)));
-        intervalo.setDuracionTotal((int) (duracionActiva));
+        intervalo.setDuracionTotal((int) duracionActiva);
 
-        DaoIntervalo daoIntervalo = new DaoIntervalo(db);
         daoIntervalo.insertarIntervalo(intervalo);
-
-        db.close();
     }
 
-    private int obtenerIdTipoPomodoro(int opcionSeleccionada, SQLiteDatabase db) {
+    private void evaluarIntervalo() {
+        // Error cuando el ultimo intervalo es trabajo y el nuevo tambien es trabajo
+        SesionDTO ultimaSesion = daoSesion.obtenerUltimaSesion();
+        Intervalo intervaloActual = daoIntervalo.obtenerUltimoIntervalo();
+
+        SimpleDateFormat isoFormato = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",Locale.getDefault());
+
+        if(ultimaSesion != null) {
+            if(ultimaSesion.isCompleta()) {
+                registrarSesion(intervaloActual);
+            } else {
+                if(ultimaSesion.getIdIntervaloTrabajo() != 0 && !intervaloActual.isEsTrabajo()){ // Es trabajo - No se guarda null en la bd
+                    try {
+                        Date fechaInicio = isoFormato.parse(intervaloActual.getFechaInicio());
+                        Intervalo intervaloSesion = daoIntervalo.obtenerIntervaloPorId(ultimaSesion.getIdIntervaloTrabajo());
+                        Date fechaFin = isoFormato.parse(intervaloSesion.getFechaFin());
+                        if (fechaInicio != null && fechaFin != null) {
+                            long limiteMaximo = 5 * 60 * 1000; // 5 min
+                            long diferenciaDias = TimeUnit.MILLISECONDS.toDays(fechaFin.getTime() - fechaInicio.getTime());
+
+                            if (diferenciaDias <= 1) {
+                                long diferenciaMilisegundos = fechaFin.getTime() - fechaInicio.getTime();
+                                if (diferenciaMilisegundos > limiteMaximo) {
+                                    registrarSesion(intervaloActual);
+                                } else {
+                                    actualizarUltimaSesion(intervaloActual, ultimaSesion);
+                                }
+                            } else {
+                                registrarSesion(intervaloActual);
+                            }
+                        }  else {
+                            Log.e("Pomodoro", "Error: Fecha inicio o fecha fin es nula");
+                        }
+                    } catch (ParseException e) {
+                        Log.e("Pomodoro", "Error al analizar las fechas", e);
+                    }
+                } else { // Es descanso
+                    registrarSesion(intervaloActual);
+                }
+            }
+        } else {
+            registrarSesion(intervaloActual);
+        }
+    }
+
+    public void registrarSesion(Intervalo ultimoIntervalo) {
+        if (ultimoIntervalo != null) {
+            SesionDTO nuevaSesion = new SesionDTO();
+            nuevaSesion.setIdIntervaloTrabajo(ultimoIntervalo.isEsTrabajo() ? ultimoIntervalo.getIdIntervalo() : null);
+            nuevaSesion.setIdIntervaloDescanso(ultimoIntervalo.isEsTrabajo() ? null : ultimoIntervalo.getIdIntervalo());
+            nuevaSesion.setFechaInicioSesion(ultimoIntervalo.getFechaInicio());
+            nuevaSesion.setDuracionTotalSesion(ultimoIntervalo.getDuracionTotal());
+            nuevaSesion.setCompleta(false); // Por defecto, la sesión no está completa
+            daoSesion.insertarSesion(nuevaSesion);
+            Log.e("Pomodoro", "Exito: se inserto el ultimoIntervalo en una nueva sesión");
+        } else {
+            Log.e("Pomodoro", "Error: ultimoIntervalo es nulo al registrar la sesión");
+        }
+    }
+
+    public void actualizarUltimaSesion(Intervalo ultimoIntervalo, SesionDTO ultimaSesion) {
+        if (ultimoIntervalo != null) {
+            ultimaSesion.setIdIntervaloDescanso(ultimoIntervalo.getIdIntervalo());
+            ultimaSesion.setDuracionTotalSesion(ultimaSesion.getDuracionTotalSesion() + ultimoIntervalo.getDuracionTotal());
+            ultimaSesion.setCompleta(true); // Marca la sesión como completa
+            daoSesion.actualizarSesion(ultimaSesion);
+            Log.e("Pomodoro", "Exito: se inserto el ultimoIntervalo en la sesión existente");
+        } else {
+            Log.e("Pomodoro", "Error: ultimoIntervalo es nulo al actualizar la sesión");
+        }
+    }
+
+    private int obtenerIdTipoPomodoro(int opcionSeleccionada) {
         String nombreTipo = "";
 
         switch (opcionSeleccionada) {
@@ -401,21 +463,15 @@ public class InicioFragment extends Fragment {
                 break;
             case 4:
                 nombreTipo = "Personalizado";
-                tiempoTrabajo = preferencias.getInt("tiempoTrabajo", 25);
-                tiempoDescanso = preferencias.getInt("tiempoDescanso", 5);
-
                 // Crear un nuevo tipo de Pomodoro personalizado y obtener su ID
                 TipoPomodoro tipoPersonalizado = new TipoPomodoro();
                 tipoPersonalizado.setNombre(nombreTipo);
                 tipoPersonalizado.setTiempoTrabajoEstablecido(tiempoTrabajo);
                 tipoPersonalizado.setTiempoDescansoEstablecido(tiempoDescanso);
 
-                DaoTipoPomodoro daoTipoPomodoro = new DaoTipoPomodoro(db);
-                return (int) daoTipoPomodoro.crearNuevoTipoPomodoro(tipoPersonalizado);
+                return (int) daoTipoPomodoro.insertarTipoPomodoro(tipoPersonalizado);
         }
-
         // Consultar en la base de datos para obtener el ID basado en el nombre
-        DaoTipoPomodoro daoTipoPomodoro = new DaoTipoPomodoro(db);
         return daoTipoPomodoro.obtenerIdPorNombre(nombreTipo);
     }
 }

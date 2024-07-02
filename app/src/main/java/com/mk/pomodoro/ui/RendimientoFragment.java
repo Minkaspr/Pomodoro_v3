@@ -2,64 +2,52 @@ package com.mk.pomodoro.ui;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import com.google.android.material.chip.Chip;
 import com.mk.pomodoro.R;
-import com.mk.pomodoro.dao.DaoIntervalo;
 import com.mk.pomodoro.ui.adapter.GestorFiltrosAdapter;
-import com.mk.pomodoro.util.PomodoroAppDB;
-
-import java.util.Locale;
 
 public class RendimientoFragment extends Fragment {
 
-    private DaoIntervalo daoIntervalo;
-    private PomodoroAppDB pomodoroDB;
     private Chip cHoy, cAyer, cSemana, cMes;
     private ViewPager2 vpFiltros;
-    private TextView tvTiempo;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        pomodoroDB = new PomodoroAppDB(getActivity());
-        daoIntervalo = new DaoIntervalo(pomodoroDB.getWritableDatabase());
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_rendimiento, container, false);
-        //tvTiempo = view.findViewById(R.id.tvTiempo);
-        // Inicializa los chips
-        cHoy = view.findViewById(R.id.cHoy);
-        cAyer = view.findViewById(R.id.cAyer);
-        cSemana = view.findViewById(R.id.cSemana);
-        cMes = view.findViewById(R.id.cMes);
-        vpFiltros = view.findViewById(R.id.pager_filtro_vista);
+        return inflater.inflate(R.layout.fragment_rendimiento, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(vista, savedInstanceState);
+
+        cHoy = vista.findViewById(R.id.cHoy);
+        cAyer = vista.findViewById(R.id.cAyer);
+        cSemana = vista.findViewById(R.id.cSemana);
+        cMes = vista.findViewById(R.id.cMes);
+        vpFiltros = vista.findViewById(R.id.pager_filtro_vista);
         GestorFiltrosAdapter adapter = new GestorFiltrosAdapter(getChildFragmentManager(), getLifecycle());
         vpFiltros.setAdapter(adapter);
 
-        // Asigna OnClickListener a los chips
         cHoy.setOnClickListener(chipClickListener);
         cAyer.setOnClickListener(chipClickListener);
         cSemana.setOnClickListener(chipClickListener);
         cMes.setOnClickListener(chipClickListener);
-        return view;
-    }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        //actualizarTiempoTotalTrabajoDelDia();
     }
 
     private final View.OnClickListener chipClickListener = new View.OnClickListener() {
@@ -86,18 +74,4 @@ public class RendimientoFragment extends Fragment {
             }
         }
     };
-
-    private void actualizarTiempoTotalTrabajoDelDia() {
-        long tiempoTotalMilisegundos = daoIntervalo.obtenerTiempoTotalTrabajoHoy();
-        String tiempoFormateado = formatearTiempo(tiempoTotalMilisegundos);
-        tvTiempo.setText(tiempoFormateado);
-    }
-
-    private String formatearTiempo(long milisegundos) {
-        int horas   = (int) ((milisegundos / (1000*60*60)) % 24);
-        int minutos = (int) ((milisegundos / (1000*60)) % 60);
-        int segundos = (int) (milisegundos / 1000) % 60 ;
-
-        return String.format(Locale.getDefault(), "%02d:%02d:%02d", horas, minutos, segundos);
-    }
 }

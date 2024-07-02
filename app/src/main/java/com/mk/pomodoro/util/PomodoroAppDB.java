@@ -30,13 +30,24 @@ public class PomodoroAppDB extends SQLiteOpenHelper {
         String tablaIntervalo = "CREATE TABLE intervalo (" +
                 "id_intervalo INTEGER PRIMARY KEY," +
                 "tipo_id INTEGER," +
-                "es_trabajo BOOLEAN NOT NULL," +
+                "es_trabajo BOOLEAN NOT NULL," + // 1 (verdadero) si es un intervalo de trabajo, 0 (falso) si es de descanso
                 "fecha_inicio TEXT NOT NULL," + // Fecha y hora de inicio en formato ISO-8601
                 "fecha_fin TEXT NOT NULL," + // Fecha y hora de fin en formato ISO-8601
                 "duracion_total INTEGER NOT NULL," + // Duración total del intervalo en milisegundos
                 "FOREIGN KEY(tipo_id) REFERENCES TipoPomodoro(id_tipo)" +
                 ");";
         db.execSQL(tablaIntervalo);
+
+        // Crear la tabla "sesion"
+        String tablaSesion = "CREATE TABLE sesion (" +
+                "id_sesion INTEGER PRIMARY KEY," +
+                "id_intervalo_trabajo INTEGER," + // Puede ser nulo
+                "id_intervalo_descanso INTEGER," + // Puede ser nulo
+                "fecha_inicio_sesion TEXT NOT NULL," + // Fecha y hora de inicio en formato ISO-8601
+                "duracion_total_sesion INTEGER NOT NULL," + // Duración total de la sesión en milisegundos
+                "completa BOOLEAN NOT NULL" + // 1 si la sesión está completa, 0 si es incompleta
+                ");";
+        db.execSQL(tablaSesion);
 
         // Crear la tabla "objetivo_diario" con solo fecha
         String tablaObjetivoDiario = "CREATE TABLE objetivo_diario (" +
