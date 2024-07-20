@@ -1,14 +1,16 @@
 package com.mk.pomodoro.dao;
 
-import com.mk.pomodoro.model.SesionDTO;
+
+import com.mk.pomodoro.dto.SesionDTO;
+import com.mk.pomodoro.model.Sesion;
 
 import java.util.List;
 
 public interface DaoSesion {
 
-    long insertarSesion(SesionDTO sesion);
-    long actualizarSesion(SesionDTO sesion);
-    SesionDTO obtenerUltimaSesion();
+    long insertarSesion(Sesion sesion);
+    long actualizarSesion(Sesion sesion);
+    Sesion obtenerUltimaSesion();
     Integer obtenerCantidadSesiones(String fecha);
-    List<com.mk.pomodoro.dto.SesionDTO> obtenerSesiones(String fecha);
+    List<SesionDTO> obtenerSesiones(String fecha, int cantidadMaxima, int filasOmitidas);
 }

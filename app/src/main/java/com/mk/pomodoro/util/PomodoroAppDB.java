@@ -8,7 +8,7 @@ import androidx.annotation.Nullable;
 
 public class PomodoroAppDB extends SQLiteOpenHelper {
 
-    private static final String DATABASE_NAME = "pomodoro.db";
+    private static final String DATABASE_NAME = "PomodoroAppDB.db";
     private static final int DATABASE_VERSION = 1;
 
     public PomodoroAppDB(@Nullable Context context) {
@@ -66,7 +66,6 @@ public class PomodoroAppDB extends SQLiteOpenHelper {
                 "('Clásico', 25, 5), " +
                 "('Corto', 10, 2);";
         db.execSQL(insertTiposPomodoroSQL);
-
     }
 
     @Override

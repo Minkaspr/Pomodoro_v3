@@ -13,10 +13,13 @@ public class GestorPomodoroViewModel extends ViewModel {
     private final MutableLiveData<Boolean> temporizadorTerminado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> temporizadorIniciado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> temaCambiado = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> tipoPomodoroCambiado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> mostrarInfoPersonalizado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> mostrarSnackbar = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> objetivoCambiado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> datosTemporizadorActualizados = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> notificacionActivada = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> mostrarDialogoNotificacionPersonalizado = new MutableLiveData<>(false);
 
     public void setTiempoTrabajo(int tiempo) {
         tiempoTrabajo.setValue(tiempo);
@@ -82,6 +85,14 @@ public class GestorPomodoroViewModel extends ViewModel {
         return temaCambiado;
     }
 
+    public void setTipoPomodoroCambiado(boolean tipoPomodoroCambiado) {
+        this.tipoPomodoroCambiado.setValue(tipoPomodoroCambiado);
+    }
+
+    public LiveData<Boolean> getTipoPomodoroCambiado() {
+        return tipoPomodoroCambiado;
+    }
+
     public void setMostrarInfoPersonalizado(boolean mostrar) {
         mostrarInfoPersonalizado.setValue(mostrar);
     }
@@ -112,5 +123,21 @@ public class GestorPomodoroViewModel extends ViewModel {
 
     public LiveData<Boolean> getDatosTemporizadorActualizados() {
         return datosTemporizadorActualizados;
+    }
+
+    public void setNotificacionActivada(boolean activado) {
+        notificacionActivada.setValue(activado);
+    }
+
+    public LiveData<Boolean> getNotificacionActivada() {
+        return notificacionActivada;
+    }
+
+    public void setMostrarDialogoNotificacionPersonalizado(boolean mostrar){
+        this.mostrarDialogoNotificacionPersonalizado.setValue(mostrar);
+    }
+
+    public LiveData<Boolean> getMostrarDialogoNotificacionPersonalizado() {
+        return mostrarDialogoNotificacionPersonalizado;
     }
 }

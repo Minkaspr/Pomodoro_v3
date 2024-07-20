@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -16,7 +17,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import android.os.Handler;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,7 +37,7 @@ import com.mk.pomodoro.dao.impl.DaoIntervaloImpl;
 import com.mk.pomodoro.dao.impl.DaoSesionImpl;
 import com.mk.pomodoro.dao.impl.DaoTipoPomodoroImpl;
 import com.mk.pomodoro.model.Intervalo;
-import com.mk.pomodoro.model.SesionDTO;
+import com.mk.pomodoro.model.Sesion;
 import com.mk.pomodoro.model.TipoPomodoro;
 import com.mk.pomodoro.ui.viewmodel.GestorPomodoroViewModel;
 import com.mk.pomodoro.util.ConstantesAppConfig;
@@ -53,6 +56,7 @@ public class InicioFragment extends Fragment {
     private MaterialButton botonDetener, botonIniciar, botonPausar, botonContinuar, botonDetenerAlarma;
 
     private boolean iniciarTemporizador = false;
+    private boolean temporizadorDetenidoManualmente = false;
     private int tiempoTrabajo;
     private int tiempoDescanso;
 
@@ -116,56 +120,52 @@ public class InicioFragment extends Fragment {
             tab.select();
         }
         prepararTemporizador((pestanaSeleccionada == 0 ? tiempoTrabajo : tiempoDescanso) * 60);
+        // --
+        gestorPomodoro.getMostrarDialogoNotificacionPersonalizado().observe(getViewLifecycleOwner(), mostrar ->{
+            if(mostrar){
+                ActivarNotificacionBottomSheet bottomSheet = ActivarNotificacionBottomSheet.newInstance();
+                bottomSheet.show(getChildFragmentManager(), "ActivarNotificacionBottomSheet");
+                gestorPomodoro.setMostrarDialogoNotificacionPersonalizado(false);
+            }
+        });
 
         gestorPomodoro.getTemaCambiado().observe(getViewLifecycleOwner(), cambiado -> {
             if (cambiado) {
                 reiniciarTemporizadorYActualizarBotones();
                 gestorPomodoro.setTemaCambiado(false);
-                gestorPomodoro.setTemporizadorIniciado(false);
+            }
+        });
+
+        gestorPomodoro.getTipoPomodoroCambiado().observe(getViewLifecycleOwner(), cambiado -> {
+            if (cambiado) {
+                reiniciarTemporizadorYActualizarBotones();
+                gestorPomodoro.setTipoPomodoroCambiado(false);
+            }
+        });
+
+        gestorPomodoro.getTiemposActualizados().observe(getViewLifecycleOwner(), tiemposActualizados -> {
+            if (tiemposActualizados) {
+                gestorPomodoro.getTiempoTrabajo().observe(getViewLifecycleOwner(), nuevoTiempoTrabajo -> {
+                    tiempoTrabajo = nuevoTiempoTrabajo;
+                    if (layoutPestanas.getSelectedTabPosition() == 0) {
+                        prepararTemporizador(tiempoTrabajo * 60);
+                    }
+                });
+                gestorPomodoro.getTiempoDescanso().observe(getViewLifecycleOwner(), nuevoTiempoDescanso -> {
+                    tiempoDescanso = nuevoTiempoDescanso;
+                    if (layoutPestanas.getSelectedTabPosition() == 1) {
+                        prepararTemporizador(tiempoDescanso * 60);
+                    }
+                });
+                gestorPomodoro.setTiemposActualizados(false);
             }
         });
 
         layoutPestanas.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                // Actualiza los valores en el ViewModel
                 int posicion = tab.getPosition();
-                iniciarTemporizador = false;
-                if (posicion == 0) {
-                    prepararTemporizador(tiempoTrabajo * 60);
-                    gestorPomodoro.setEstadoTemporizador("Trabajo");
-                } else if (posicion == 1) {
-                    prepararTemporizador(tiempoDescanso * 60);
-                    gestorPomodoro.setEstadoTemporizador("Descanso");
-                }
-                actualizarPreferencias.putInt(ConstantesAppConfig.C_PESTANA_SELECCIONADA, posicion);
-                actualizarPreferencias.apply();
-
-                gestorPomodoro.setTemporizadorTerminado(false);
-                botonIniciar.setVisibility(View.VISIBLE);
-                botonPausar.setVisibility(View.GONE);
-                botonContinuar.setVisibility(View.GONE);
-                botonDetener.setVisibility(View.GONE);
-
-                // Detiene el sonido de la alarma si está sonando.
-                if (reproductorAlarma.isPlaying()) {
-                    reproductorAlarma.pause();
-                    reproductorAlarma.seekTo(0);
-                }
-                // Detener la vibración si está activa.
-                Vibrator vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
-                if (vibrator.hasVibrator()) { // Verifica si el dispositivo tiene vibrador.
-                    vibrator.cancel();
-                }
-                // Oculta el botón para detener la alarma si está visible.
-                if (botonDetenerAlarma.getVisibility() == View.VISIBLE) {
-                    botonDetenerAlarma.setVisibility(View.GONE);
-                }
-                // Cancelar la notificación
-                gestorNotificaciones.cancel(1);
-                iniciarTemporizador = false;
-                gestorPomodoro.setTemporizadorIniciado(false);
-                finalizarIntervalo();
+                procesarSeleccionDePestana(posicion);
             }
             @Override
             public void onTabUnselected(TabLayout.Tab tab) {}
@@ -176,12 +176,10 @@ public class InicioFragment extends Fragment {
 
         botonDetener.setOnClickListener(v -> {
             reiniciarTemporizadorYActualizarBotones();
-            gestorNotificaciones.cancel(1);
-            iniciarTemporizador = false;
-            gestorPomodoro.setTemporizadorIniciado(false);
-            finalizarIntervalo();
+            temporizadorDetenidoManualmente = true;
         });
         botonIniciar.setOnClickListener(v -> {
+            temporizadorDetenidoManualmente = false;
             iniciarTemporizador = true;
             temporizador.iniciarTemporizador();
             botonIniciar.setVisibility(View.GONE);
@@ -227,38 +225,7 @@ public class InicioFragment extends Fragment {
             // Cancelar la notificación
             gestorNotificaciones.cancel(1);
             iniciarTemporizador = false;
-        });
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Observa los cambios en ViewModel
-        gestorPomodoro.getTiemposActualizados().observe(getViewLifecycleOwner(), tiemposActualizados -> {
-            if (tiemposActualizados) {
-                gestorPomodoro.getTiempoTrabajo().observe(getViewLifecycleOwner(), nuevoTiempoTrabajo -> {
-                    // Actualiza tu variable tiempoTrabajo con el nuevo tiempo de trabajo
-                    tiempoTrabajo = nuevoTiempoTrabajo;
-                    // Comprueba si la opción de trabajo está seleccionada en tu TabLayout
-                    if (layoutPestanas.getSelectedTabPosition() == 0) {
-                        // Si la opción de trabajo está seleccionada, actualiza el temporizador
-                        prepararTemporizador(tiempoTrabajo * 60);
-                        reiniciarTemporizadorYActualizarBotones();
-                    }
-                });
-
-                gestorPomodoro.getTiempoDescanso().observe(getViewLifecycleOwner(), nuevoTiempoDescanso -> {
-                    // Actualiza tu variable tiempoDescanso con el nuevo tiempo de descanso
-                    tiempoDescanso = nuevoTiempoDescanso;
-                    // Comprueba si la opción de descanso está seleccionada en tu TabLayout
-                    if (layoutPestanas.getSelectedTabPosition() == 1) {
-                        // Si la opción de descanso está seleccionada, actualiza el temporizador
-                        prepararTemporizador(tiempoDescanso * 60);
-                        reiniciarTemporizadorYActualizarBotones();
-                    }
-                });
-                gestorPomodoro.setTiemposActualizados(false);
-            }
+            temporizadorDetenidoManualmente = true;
         });
     }
 
@@ -279,6 +246,7 @@ public class InicioFragment extends Fragment {
         }
         // Iniciamos el temporizador solo si iniciarTemporizador es verdadero
         if (iniciarTemporizador) {
+            assert temporizador != null;
             temporizador.iniciarTemporizador();
         }
 
@@ -294,18 +262,18 @@ public class InicioFragment extends Fragment {
 
         temporizador.setEscuchadorFinalizacion(() -> {
             tiempo.setText(getString(R.string.frag_ini_tiempo_predeterminado));
-            // Leer la preferencia del usuario para el sonido y vibración
             boolean sonidoHabilitado = preferencias.getBoolean(ConstantesAppConfig.C_SONIDO, ConstantesAppConfig.V_SONIDO_B);
             boolean vibracionHabilitada = preferencias.getBoolean(ConstantesAppConfig.C_VIBRACION, ConstantesAppConfig.V_VIBRACION_B);
+            boolean sesionAutomatica = preferencias.getBoolean(ConstantesAppConfig.C_SESION_AUTOMATICA, ConstantesAppConfig.V_SESION_AUTOMATICA_B);
+
             if (sonidoHabilitado) {
-                // Reproduce el sonido de la alarma.
+                // Reproducir el sonido en buble
                 reproductorAlarma.start();
-                // Configura el MediaPlayer para que se repita.
                 reproductorAlarma.setLooping(true);
             }
             if (vibracionHabilitada) {
                 // Activa la vibración en bucle con un patrón de 1 segundo de vibración y 1 segundo de pausa
-                Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+                Vibrator vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
                 if (vibrator != null) {
                     long[] pattern = {0, 1000, 1000}; // Patrón: 0 ms de espera, 1000 ms de vibración, 1000 ms de pausa
                     vibrator.vibrate(pattern, 0); // El segundo parámetro indica en qué índice del patrón comenzar (0 para repetir desde el principio)
@@ -319,21 +287,79 @@ public class InicioFragment extends Fragment {
             Intent intent = new Intent("com.mk.pomodoro.TEMPORIZADOR_TERMINADO");
             LocalBroadcastManager.getInstance(requireActivity()).sendBroadcast(intent);
 
-            // Oculta los otros botones.
+            // Mostrar el boton para detener y ocultar el resto
             botonIniciar.setVisibility(View.GONE);
             botonPausar.setVisibility(View.GONE);
             botonContinuar.setVisibility(View.GONE);
             botonDetener.setVisibility(View.GONE);
-            // Muestra el botón para detener la alarma.
             botonDetenerAlarma.setVisibility(View.VISIBLE);
             finalizarIntervalo();
+            manejarSesionAutomatica(sesionAutomatica);
         });
 
         // Mostramos el tiempo inicial sin iniciar el temporizador
         int segundosRestantes = segundos;
         tiempo.setText(String.format(Locale.getDefault(), "%02d:%02d", segundosRestantes / 60, segundosRestantes % 60));
         barraProgresoCircular.setProgress(segundosRestantes);
+    }
 
+    private void procesarSeleccionDePestana(int posicion) {
+        iniciarTemporizador = false;
+        if (posicion == 0) {
+            prepararTemporizador(tiempoTrabajo * 60);
+            gestorPomodoro.setEstadoTemporizador("Trabajo");
+        } else if (posicion == 1) {
+            prepararTemporizador(tiempoDescanso * 60);
+            gestorPomodoro.setEstadoTemporizador("Descanso");
+        }
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_PESTANA_SELECCIONADA, posicion);
+        actualizarPreferencias.apply();
+
+        gestorPomodoro.setTemporizadorTerminado(false);
+        botonIniciar.setVisibility(View.VISIBLE);
+        botonPausar.setVisibility(View.GONE);
+        botonContinuar.setVisibility(View.GONE);
+        botonDetener.setVisibility(View.GONE);
+
+        // Detiene el sonido de la alarma si está sonando.
+        if (reproductorAlarma.isPlaying()) {
+            reproductorAlarma.pause();
+            reproductorAlarma.seekTo(0);
+        }
+        // Detener la vibración si está activa.
+        Vibrator vibrator = (Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator.hasVibrator()) { // Verifica si el dispositivo tiene vibrador.
+            vibrator.cancel();
+        }
+        // Oculta el botón para detener la alarma si está visible.
+        if (botonDetenerAlarma.getVisibility() == View.VISIBLE) {
+            botonDetenerAlarma.setVisibility(View.GONE);
+        }
+        // Cancelar la notificación
+        gestorNotificaciones.cancel(1);
+        iniciarTemporizador = false;
+        gestorPomodoro.setTemporizadorIniciado(false);
+        finalizarIntervalo();
+    }
+
+    private void manejarSesionAutomatica(boolean sesionAutomatica) {
+        if (sesionAutomatica) {
+            new Handler().postDelayed(() -> {
+                if (temporizadorDetenidoManualmente) {
+                    return; // Si el temporizador fue detenido manualmente, no hacer nada.
+                }
+
+                int posicionActual = layoutPestanas.getSelectedTabPosition();
+                if (posicionActual == 0) {
+                    // Cambiar a la pestaña de descanso e iniciar el temporizador
+                    TabLayout.Tab tab = layoutPestanas.getTabAt(1);
+                    if (tab != null) {
+                        tab.select();
+                    }
+                    botonIniciar.performClick();
+                }
+            }, 15000); // Espera de 15 segundos
+        }
     }
 
     private void reiniciarTemporizadorYActualizarBotones() {
@@ -342,6 +368,9 @@ public class InicioFragment extends Fragment {
         botonPausar.setVisibility(View.GONE);
         botonContinuar.setVisibility(View.GONE);
         botonDetener.setVisibility(View.GONE);
+        gestorNotificaciones.cancel(1);
+        iniciarTemporizador = false;
+        gestorPomodoro.setTemporizadorIniciado(false);
         finalizarIntervalo();
     }
 
@@ -377,8 +406,7 @@ public class InicioFragment extends Fragment {
     }
 
     private void evaluarIntervalo() {
-        // Error cuando el ultimo intervalo es trabajo y el nuevo tambien es trabajo
-        SesionDTO ultimaSesion = daoSesion.obtenerUltimaSesion();
+        Sesion ultimaSesion = daoSesion.obtenerUltimaSesion();
         Intervalo intervaloActual = daoIntervalo.obtenerUltimoIntervalo();
 
         SimpleDateFormat isoFormato = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",Locale.getDefault());
@@ -392,12 +420,13 @@ public class InicioFragment extends Fragment {
                         Date fechaInicio = isoFormato.parse(intervaloActual.getFechaInicio());
                         Intervalo intervaloSesion = daoIntervalo.obtenerIntervaloPorId(ultimaSesion.getIdIntervaloTrabajo());
                         Date fechaFin = isoFormato.parse(intervaloSesion.getFechaFin());
+
                         if (fechaInicio != null && fechaFin != null) {
                             long limiteMaximo = 5 * 60 * 1000; // 5 min
                             long diferenciaDias = TimeUnit.MILLISECONDS.toDays(fechaFin.getTime() - fechaInicio.getTime());
 
                             if (diferenciaDias <= 1) {
-                                long diferenciaMilisegundos = fechaFin.getTime() - fechaInicio.getTime();
+                                long diferenciaMilisegundos = fechaInicio.getTime() - fechaFin.getTime();
                                 if (diferenciaMilisegundos > limiteMaximo) {
                                     registrarSesion(intervaloActual);
                                 } else {
@@ -423,7 +452,7 @@ public class InicioFragment extends Fragment {
 
     public void registrarSesion(Intervalo ultimoIntervalo) {
         if (ultimoIntervalo != null) {
-            SesionDTO nuevaSesion = new SesionDTO();
+            Sesion nuevaSesion = new Sesion();
             nuevaSesion.setIdIntervaloTrabajo(ultimoIntervalo.isEsTrabajo() ? ultimoIntervalo.getIdIntervalo() : null);
             nuevaSesion.setIdIntervaloDescanso(ultimoIntervalo.isEsTrabajo() ? null : ultimoIntervalo.getIdIntervalo());
             nuevaSesion.setFechaInicioSesion(ultimoIntervalo.getFechaInicio());
@@ -436,7 +465,7 @@ public class InicioFragment extends Fragment {
         }
     }
 
-    public void actualizarUltimaSesion(Intervalo ultimoIntervalo, SesionDTO ultimaSesion) {
+    public void actualizarUltimaSesion(Intervalo ultimoIntervalo, Sesion ultimaSesion) {
         if (ultimoIntervalo != null) {
             ultimaSesion.setIdIntervaloDescanso(ultimoIntervalo.getIdIntervalo());
             ultimaSesion.setDuracionTotalSesion(ultimaSesion.getDuracionTotalSesion() + ultimoIntervalo.getDuracionTotal());

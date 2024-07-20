@@ -8,8 +8,8 @@ import com.google.android.material.progressindicator.CircularProgressIndicator;
 import java.util.Locale;
 
 public class Temporizador {
-    private long milisegundosFuturos;
-    private long intervaloCuentaRegresiva;
+    private final long milisegundosFuturos;
+    private final long intervaloCuentaRegresiva;
     private long milisegundosRestantes;
     private TemporizadorInterno temporizador;
     private boolean estaCorriendo = false;
@@ -39,8 +39,8 @@ public class Temporizador {
         this.escuchadorFinalizacion = escuchadorFinalizacion;
     }
 
-    private class TemporizadorInterno extends CountDownTimer {
-        private Temporizador padre;
+    private static class TemporizadorInterno extends CountDownTimer {
+        private final Temporizador padre;
 
         public TemporizadorInterno(Temporizador padre, long milisegundosFuturos, long intervaloCuentaRegresiva) {
             super(milisegundosFuturos, intervaloCuentaRegresiva);
@@ -98,10 +98,6 @@ public class Temporizador {
 
     public void destruirTemporizador() {
         temporizador.cancel();
-    }
-
-    public boolean getEstaCorriendo() {
-        return estaCorriendo;
     }
 
     public void setEstaCorriendo(boolean estaCorriendo) {

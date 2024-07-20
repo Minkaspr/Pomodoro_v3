@@ -13,6 +13,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,14 +33,17 @@ import com.mk.pomodoro.ui.viewmodel.GestorPomodoroViewModel;
 import com.mk.pomodoro.util.ConstantesAppConfig;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class FiltroHoyFragment extends Fragment {
 
-    private AppCompatTextView tvProgreso, tvProductividadRealizado, tvObjetivoTrabajo, tvObjetivoRealizado, tvMensajeObjetivo, tvDescansoRealizado, tvSesionesRealizados;
+    private AppCompatTextView tvProgreso, tvProductividadRealizado, tvObjetivoTrabajo, tvObjetivoRealizado, tvMensajeObjetivo, tvDescansoRealizado, tvSesionesRealizados, tvNoHayDatos;
     private CircularProgressIndicator pciAnvaceRealizado;
     private MaterialCardView mcdContenedorObjetivoDiario, mcdContenedorProductividadDiaria;
     private RecyclerView rvSesionesHoy;
@@ -48,8 +53,14 @@ public class FiltroHoyFragment extends Fragment {
     private SharedPreferences preferencias;
     private GestorPomodoroViewModel gestorPomodoro;
 
-    private MaterialDividerItemDecoration divider;
     private String fechaHoy;
+
+    private SesionDTOAdapter sesionDTOAdapter;
+    private boolean estaCargando = false;
+    private int paginaActual = 0;
+    private static final int TAMANO_PAGINA = 10;
+    private ExecutorService executorService;
+    private Handler mainHandler;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,6 +71,9 @@ public class FiltroHoyFragment extends Fragment {
         gestorPomodoro = new ViewModelProvider(requireActivity()).get(GestorPomodoroViewModel.class);
 
         fechaHoy = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        executorService = Executors.newSingleThreadExecutor();
+        mainHandler = new Handler(Looper.getMainLooper());
     }
 
     @Override
@@ -73,9 +87,15 @@ public class FiltroHoyFragment extends Fragment {
         super.onViewCreated(vista, savedInstanceState);
         mcdContenedorObjetivoDiario = vista.findViewById(R.id.mcdContenedorObjetivoDiario);
         mcdContenedorProductividadDiaria = vista.findViewById(R.id.mcdContenedorProductividadDiaria);
+        tvNoHayDatos = vista.findViewById(R.id.tvNoHayDatos);
         rvSesionesHoy = vista.findViewById(R.id.rvSesionesHoy);
         rvSesionesHoy.setLayoutManager(new LinearLayoutManager(getContext()));
-        divider = new MaterialDividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL);
+        MaterialDividerItemDecoration divider = new MaterialDividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL);
+        divider.setLastItemDecorated(false);
+        rvSesionesHoy.addItemDecoration(divider);
+        sesionDTOAdapter = new SesionDTOAdapter(getContext(), new ArrayList<>());
+        rvSesionesHoy.setAdapter(sesionDTOAdapter);
+
         tvProgreso = vista.findViewById(R.id.tvProgreso);
         tvProductividadRealizado = vista.findViewById(R.id.tvProductividadRealizado);
         tvObjetivoTrabajo = vista.findViewById(R.id.tvObjetivoTrabajo);
@@ -87,7 +107,18 @@ public class FiltroHoyFragment extends Fragment {
 
         tarjetaTiempoTrabajoHoy();
         tarjetaDescansoYSesion();
-        misSesiones();
+        reiniciarPaginacion();
+        cargarMasSesiones();
+
+        rvSesionesHoy.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (!recyclerView.canScrollVertically(1) && !estaCargando) {
+                    cargarMasSesiones();
+                }
+            }
+        });
 
         gestorPomodoro.getObjetivoCambiado().observe(getViewLifecycleOwner(), cambiado -> {
             if (cambiado) {
@@ -100,7 +131,8 @@ public class FiltroHoyFragment extends Fragment {
             if (datosActualizados) {
                 tarjetaTiempoTrabajoHoy();
                 tarjetaDescansoYSesion();
-                misSesiones();
+                reiniciarPaginacion();
+                cargarMasSesiones();
                 gestorPomodoro.setDatosTemporizadorActualizados(false);
             }
         });
@@ -146,12 +178,35 @@ public class FiltroHoyFragment extends Fragment {
         tvSesionesRealizados.setText(getString(R.string.frag_ren_hoy_card_4_cont_text_1, cantidadSesiones));
     }
 
-    public void misSesiones(){
-        List<SesionDTO> sesionesDeHoy = daoSesion.obtenerSesiones(fechaHoy);
-        SesionDTOAdapter sesionDTOAdapter = new SesionDTOAdapter(getContext(), sesionesDeHoy);
-        divider.setLastItemDecorated(false);
-        rvSesionesHoy.addItemDecoration(divider);
-        rvSesionesHoy.setAdapter(sesionDTOAdapter);
+    private void cargarMasSesiones() {
+        estaCargando = true;
+        executorService.execute(() -> {
+            List<SesionDTO> sesiones = daoSesion.obtenerSesiones(fechaHoy, TAMANO_PAGINA,paginaActual * TAMANO_PAGINA);
+            mainHandler.post(() -> {
+                if (sesiones != null && !sesiones.isEmpty()) {
+                    sesionDTOAdapter.agregarSesiones(sesiones);
+                    paginaActual++;
+                }
+                estaCargando = false;
+                verificarEstadoLista();
+            });
+        });
+    }
+
+    private void reiniciarPaginacion() {
+        paginaActual = 0;
+        sesionDTOAdapter.borrarSesiones();
+        estaCargando = false;
+    }
+
+    private void verificarEstadoLista() {
+        if (sesionDTOAdapter.getItemCount() == 0) {
+            tvNoHayDatos.setVisibility(View.VISIBLE);
+            rvSesionesHoy.setVisibility(View.GONE);
+        } else {
+            tvNoHayDatos.setVisibility(View.GONE);
+            rvSesionesHoy.setVisibility(View.VISIBLE);
+        }
     }
 
     private String formatearTiempo(long milisegundos) {
@@ -199,7 +254,6 @@ public class FiltroHoyFragment extends Fragment {
             mensajes = new String[]{"¡Objetivo alcanzado!", "¡Excelente trabajo!"};
         }
 
-        // Selecciona un mensaje aleatorio
         int indiceAleatorio = random.nextInt(mensajes.length);
         return mensajes[indiceAleatorio];
     }

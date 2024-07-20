@@ -9,6 +9,7 @@
     <string name="frag_ini_subtitulo_2">Descanso</string>
     <string name="frag_ini_tiempo_predeterminado">00:00</string>
     <string name="frag_ini_ic_circulo_desc">fondo</string>
+    <string name="frag_ini_btn_reproducir_desc">reproducir</string>
 
     <string name="pagina_rendimiento">Rendimiento</string>
     <string name="frag_ren_titulo">Rendimiento</string>
@@ -41,21 +42,29 @@
 
     <string name="pagina_ajustes">Ajustes</string>
     <string name="frag_aju_titulo">Ajustes</string>
-    <string name="frag_aju_sec_pomodoro">Pomodoro</string>
-    <string name="frag_aju_sec_pom_op_1_extendido">Extendido</string>
-    <string name="frag_aju_sec_pom_op_1_extendido_desc">Trabajo 45 min y Descanso 15 min</string>
-    <string name="frag_aju_sec_pom_op_2_clasico">Clásico</string>
-    <string name="frag_aju_sec_pom_op_2_clasico_desc">Trabajo 25 min y Descanso 5 min</string>
-    <string name="frag_aju_sec_pom_op_3_corto">Corto</string>
-    <string name="frag_aju_sec_pom_op_3_corto_descn">Trabajo 10 min y Descanso 2 min</string>
-    <string name="frag_aju_sec_pom_op_4_personalizado">Personalizado</string>
-    <string name="frag_aju_sec_pom_op_4_personalizado_desc">Trabajo y Descanso a tu medida</string>
-    <string name="frag_aju_sec_pom_ic_informacion_desc">Información</string>
-    <string name="frag_aju_sec_pom_op_4_personalizado_informacion_desc">Mantener presionado para editar</string>
-    <string name="frag_aju_sec_pom_ic_seleccionado_desc">Seleccionado</string>
-    <string name="frag_aju_sec_pom_op_objetivo_diario">Objetivo Diario</string>
-    <string name="frag_aju_sec_pom_op_objetivo_diario_desc">Establecer un objetivo diario</string>
-    <string name="frag_aju_sec_pom_op_objetivo_diario_inter">Activar o Desactivar Objetivo Diario</string>
+    <string name="frag_aju_sec_tipo_pomodoro">Tipos de Pomodoro</string>
+    <string name="frag_aju_sec_tip_pom_op_1_extendido">Extendido</string>
+    <string name="frag_aju_sec_tip_pom_op_1_extendido_desc">Trabajo 45 min y Descanso 15 min</string>
+    <string name="frag_aju_sec_tip_pom_op_2_clasico">Clásico</string>
+    <string name="frag_aju_sec_tip_pom_op_2_clasico_desc">Trabajo 25 min y Descanso 5 min</string>
+    <string name="frag_aju_sec_tip_pom_op_3_corto">Corto</string>
+    <string name="frag_aju_sec_tip_pom_op_3_corto_descn">Trabajo 10 min y Descanso 2 min</string>
+    <string name="frag_aju_sec_tip_pom_op_4_personalizado">Personalizado</string>
+    <string name="frag_aju_sec_tip_pom_op_4_personalizado_desc">Trabajo y Descanso a tu medida</string>
+    <string name="frag_aju_sec_tip_pom_ic_informacion_desc">Información</string>
+    <string name="frag_aju_sec_tip_pom_op_4_personalizado_informacion_desc">Mantener presionado para editar</string>
+    <string name="frag_aju_sec_tip_pom_ic_seleccionado_desc">Seleccionado</string>
+    <string name="frag_aju_sec_configurar_pomodoro">Configurar Pomodoro</string>
+    <string name="frag_aju_sec_conf_pom_op_objetivo_diario">Objetivo Diario</string>
+    <string name="frag_aju_sec_conf_pom_op_objetivo_diario_desc_def">Establecer un objetivo diario</string>
+    <string name="frag_aju_sec_conf_pom_op_objetivo_diario_desc_estab">Objetivo diario establecido: %1$s\n• Presionar para editar</string>
+    <string name="frag_aju_sec_conf_pom_op_objetivo_diario_inter">Activar o Desactivar Objetivo Diario</string>
+    <string name="frag_aju_sec_conf_pom_op_sesion_automatica">Sesión Automática</string>
+    <string name="frag_aju_sec_conf_pom_op_sesion_automatica_inter">Activar o Desactivar Sesión Automática</string>
+
+    <string name="frag_aju_dialogo_tema_info_Mensaje">Cambiar de tema detendrá el temporizador del intervalo en curso. ¿Deseas continuar?</string>">
+    <string name="frag_aju_dialogo_tipo_pomodoro_info_Mensaje">Si cambias el tipo de Pomodoro, se detendrá el temporizador del intervalo actual. ¿Deseas continuar?</string>">
+    <string name="frag_aju_dialogo_no_mostrar">No volver a mostrar</string>
 
     <string name="hoja_inferior_titulo_cronometro">Personalizar</string>
     <string name="hoja_inferior_titulo_tiempo_trabajo">Tiempo de trabajo</string>
@@ -71,8 +80,16 @@
     <string name="frag_aju_sec_sis_op_sonido_inter">Activar o Desactivar Sonido</string>
     <string name="frag_aju_sec_sis_op_vibracion">Vibración</string>
     <string name="frag_aju_sec_sis_op_vibracion_inter">Activar o Desactivar Vibración</string>
+    <string name="frag_aju_sec_sis_op_notificacion">Notificación</string>
+    <string name="frag_aju_sec_sis_op_notificacion_inter">Activar o Desactivar Notificación</string>
+
+    <string name="hoja_inferior_titulo_notificacion">Activar las notificaciones</string>
+    <string name="hoja_inferior_cuerpo_notificacion">Activa las notificaciones para recibir actualizaciones durante tus sesiones. La notificación te informará sobre el intervalo en curso de trabajo o descanso.</string>
+    <string name="hoja_inferior_boton_notificacion">Continuar</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="no_hay_datos">Aún no se han registrado datos</string>
+
     <!--
      Tipos de Marcadores:
         %s: Representa una cadena de texto (string).

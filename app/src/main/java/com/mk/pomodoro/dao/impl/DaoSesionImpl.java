@@ -9,11 +9,13 @@ import android.util.Log;
 
 import com.mk.pomodoro.dao.DaoIntervalo;
 import com.mk.pomodoro.dao.DaoSesion;
+import com.mk.pomodoro.dto.SesionDTO;
 import com.mk.pomodoro.model.Intervalo;
-import com.mk.pomodoro.model.SesionDTO;
+import com.mk.pomodoro.model.Sesion;
 import com.mk.pomodoro.util.ConexionAppDB;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class DaoSesionImpl implements DaoSesion {
@@ -27,7 +29,7 @@ public class DaoSesionImpl implements DaoSesion {
     }
 
     @Override
-    public long insertarSesion(SesionDTO sesion) {
+    public long insertarSesion(Sesion sesion) {
         ContentValues values = new ContentValues();
         values.put("id_intervalo_trabajo", sesion.getIdIntervaloTrabajo());
         values.put("id_intervalo_descanso", sesion.getIdIntervaloDescanso());
@@ -44,7 +46,7 @@ public class DaoSesionImpl implements DaoSesion {
     }
 
     @Override
-    public long actualizarSesion(SesionDTO sesion) {
+    public long actualizarSesion(Sesion sesion) {
         ContentValues values = new ContentValues();
         values.put("id_intervalo_trabajo", sesion.getIdIntervaloTrabajo());
         values.put("id_intervalo_descanso", sesion.getIdIntervaloDescanso());
@@ -64,7 +66,7 @@ public class DaoSesionImpl implements DaoSesion {
     }
 
     @Override
-    public SesionDTO obtenerUltimaSesion() {
+    public Sesion obtenerUltimaSesion() {
         String orderBy = "id_sesion DESC"; // Ordenar por ID de sesión en orden descendente
 
         try (Cursor resultadoConsulta = instanciaDb.query("sesion", null, null, null, null, null, orderBy)) {
@@ -83,7 +85,7 @@ public class DaoSesionImpl implements DaoSesion {
                 int duracionTotalSesion = resultadoConsulta.getInt(indexDuracionTotalSesion);
                 boolean completa = resultadoConsulta.getInt(indexCompleta) == 1;
 
-                SesionDTO ultimaSesion = new SesionDTO();
+                Sesion ultimaSesion = new Sesion();
                 ultimaSesion.setIdSesion(idSesion);
                 ultimaSesion.setIdIntervaloTrabajo(idIntervaloTrabajo);
                 ultimaSesion.setIdIntervaloDescanso(idIntervaloDescanso);
@@ -115,16 +117,17 @@ public class DaoSesionImpl implements DaoSesion {
     }
 
     @Override
-    public List<com.mk.pomodoro.dto.SesionDTO> obtenerSesiones(String fecha) {
-        List<com.mk.pomodoro.dto.SesionDTO> sesiones = new ArrayList<>();
-        String query = "SELECT * FROM sesion WHERE fecha_inicio_sesion LIKE ? ORDER BY id_sesion DESC";
-        String[] argumentosFiltro = { fecha + "%" };
+    public List<SesionDTO> obtenerSesiones(String fecha, int cantidadMaxima, int filasOmitidas) {
+        List<SesionDTO> sesiones = new ArrayList<>();
+        String query = "SELECT * FROM sesion WHERE fecha_inicio_sesion LIKE ? ORDER BY id_sesion DESC LIMIT ? OFFSET ?";
+        String[] argumentosFiltro = { fecha + "%", String.valueOf(cantidadMaxima), String.valueOf(filasOmitidas) };
 
         try (Cursor cursorSesion = instanciaDb.rawQuery(query, argumentosFiltro)) {
-            int numeroSesion = cursorSesion.getCount(); // Obtener la cantidad de sesiones de hoy
+            int totalSesiones = obtenerCantidadSesiones(fecha);
+            int numeroSesion = totalSesiones - filasOmitidas;
 
             while (cursorSesion.moveToNext()) {
-                com.mk.pomodoro.dto.SesionDTO sesionDTO = new com.mk.pomodoro.dto.SesionDTO();
+                SesionDTO sesionDTO = new SesionDTO();
                 sesionDTO.setNumeroSesion(numeroSesion--);
 
                 int completaIndex = cursorSesion.getColumnIndex("completa");

@@ -19,15 +19,23 @@ import java.util.Locale;
 public class SesionDTOAdapter extends RecyclerView.Adapter<SesionDTOAdapter.SesionDTOViewHolder> {
 
     private final Context contexto;
-    private List<SesionDTO> listaSesionDTO;
+    private final List<SesionDTO> listaSesionDTO;
 
     public SesionDTOAdapter(Context contexto, List<SesionDTO> listaSesionDTO) {
         this.contexto = contexto;
         this.listaSesionDTO = listaSesionDTO;
     }
 
-    public void setListaSesion(List<SesionDTO> listaSesionDTO) {
-        this.listaSesionDTO = listaSesionDTO;
+    public void agregarSesiones(List<SesionDTO> nuevasSesiones) {
+        int posicionInicio  = listaSesionDTO.size();
+        listaSesionDTO.addAll(nuevasSesiones);
+        notifyItemRangeInserted(posicionInicio , nuevasSesiones.size());
+    }
+
+    public void borrarSesiones() {
+        int cantidadElementos  = listaSesionDTO.size();
+        listaSesionDTO.clear();
+        notifyItemRangeRemoved(0, cantidadElementos );
     }
 
     class SesionDTOViewHolder extends RecyclerView.ViewHolder {
@@ -74,7 +82,6 @@ public class SesionDTOAdapter extends RecyclerView.Adapter<SesionDTOAdapter.Sesi
         int minutos = (int) ((milisegundos / (1000*60)) % 60);
         int segundos = (int) (milisegundos / 1000) % 60 ;
 
-        //return String.format(Locale.getDefault(), "%02d:%02d:%02d", horas, minutos, segundos);
         if (horas > 0) {
             if (minutos > 0) {
                 return String.format(Locale.getDefault(), "%dh y %dmin", horas, minutos);

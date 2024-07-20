@@ -20,8 +20,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ScrollView
-        android:id="@+id/svContenedor"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nsvContenedor"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="32dp"
@@ -33,19 +33,19 @@
             android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">
-            <androidx.appcompat.widget.AppCompatTextView
-                android:text="@string/frag_aju_sec_pomodoro"
-                android:textAppearance="?attr/textAppearanceHeadline5"
-                android:textColor="@color/md_theme_secondary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginVertical="4dp"
-                android:paddingHorizontal="16dp"/>
 
             <androidx.appcompat.widget.LinearLayoutCompat
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
+                <TextView
+                    android:text="@string/frag_aju_sec_tipo_pomodoro"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/md_theme_secondary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp"
+                    android:paddingHorizontal="16dp" />
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/clExtendido"
                     android:layout_width="match_parent"
@@ -61,8 +61,8 @@
                         app:layout_constraintTop_toTopOf="parent">
                         <TextView
                             android:id="@+id/tvExtendidoNombre"
-                            android:text="@string/frag_aju_sec_pom_op_1_extendido"
-                            android:textAppearance="?attr/textAppearanceSubtitle1"
+                            android:text="@string/frag_aju_sec_tip_pom_op_1_extendido"
+                            android:textAppearance="?attr/textAppearanceSubtitle2"
                             android:textColor="@color/md_theme_onBackground"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -70,7 +70,7 @@
                             app:layout_constraintTop_toTopOf="parent" />
                         <TextView
                             android:id="@+id/tvExtendidoDescripcion"
-                            android:text="@string/frag_aju_sec_pom_op_1_extendido_desc"
+                            android:text="@string/frag_aju_sec_tip_pom_op_1_extendido_desc"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="@color/md_theme_onSurfaceVariant"
                             android:layout_width="wrap_content"
@@ -82,7 +82,7 @@
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_check"
                         android:visibility="invisible"
-                        android:contentDescription="@string/frag_aju_sec_pom_ic_seleccionado_desc"
+                        android:contentDescription="@string/frag_aju_sec_tip_pom_ic_seleccionado_desc"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintRight_toRightOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
@@ -102,8 +102,8 @@
                         app:layout_constraintTop_toTopOf="parent">
                         <TextView
                             android:id="@+id/tvClasicoNombre"
-                            android:text="@string/frag_aju_sec_pom_op_2_clasico"
-                            android:textAppearance="?attr/textAppearanceSubtitle1"
+                            android:text="@string/frag_aju_sec_tip_pom_op_2_clasico"
+                            android:textAppearance="?attr/textAppearanceSubtitle2"
                             android:textColor="@color/md_theme_onBackground"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -111,7 +111,7 @@
                             app:layout_constraintTop_toTopOf="parent" />
                         <TextView
                             android:id="@+id/tvClasicoDescripcion"
-                            android:text="@string/frag_aju_sec_pom_op_2_clasico_desc"
+                            android:text="@string/frag_aju_sec_tip_pom_op_2_clasico_desc"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="@color/md_theme_onSurfaceVariant"
                             android:layout_width="wrap_content"
@@ -122,7 +122,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_check"
-                        android:contentDescription="@string/frag_aju_sec_pom_ic_seleccionado_desc"
+                        android:contentDescription="@string/frag_aju_sec_tip_pom_ic_seleccionado_desc"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintRight_toRightOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
@@ -143,8 +143,8 @@
                         app:layout_constraintTop_toTopOf="parent">
                         <TextView
                             android:id="@+id/tvCortoNombre"
-                            android:text="@string/frag_aju_sec_pom_op_3_corto"
-                            android:textAppearance="?attr/textAppearanceSubtitle1"
+                            android:text="@string/frag_aju_sec_tip_pom_op_3_corto"
+                            android:textAppearance="?attr/textAppearanceSubtitle2"
                             android:textColor="@color/md_theme_onBackground"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -152,7 +152,7 @@
                             app:layout_constraintTop_toTopOf="parent" />
                         <TextView
                             android:id="@+id/tvCortoDescripcion"
-                            android:text="@string/frag_aju_sec_pom_op_3_corto_descn"
+                            android:text="@string/frag_aju_sec_tip_pom_op_3_corto_descn"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="@color/md_theme_onSurfaceVariant"
                             android:layout_width="wrap_content"
@@ -164,7 +164,7 @@
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_check"
                         android:visibility="invisible"
-                        android:contentDescription="@string/frag_aju_sec_pom_ic_seleccionado_desc"
+                        android:contentDescription="@string/frag_aju_sec_tip_pom_ic_seleccionado_desc"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintRight_toRightOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
@@ -190,8 +190,8 @@
                             android:orientation="vertical">
                             <TextView
                                 android:id="@+id/tvPersonalizadoNombre"
-                                android:text="@string/frag_aju_sec_pom_op_4_personalizado"
-                                android:textAppearance="?attr/textAppearanceSubtitle1"
+                                android:text="@string/frag_aju_sec_tip_pom_op_4_personalizado"
+                                android:textAppearance="?attr/textAppearanceSubtitle2"
                                 android:textColor="@color/md_theme_onBackground"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -199,7 +199,7 @@
                                 app:layout_constraintTop_toTopOf="parent" />
                             <TextView
                                 android:id="@+id/tvPersonalizadoDescripcion"
-                                android:text="@string/frag_aju_sec_pom_op_4_personalizado_desc"
+                                android:text="@string/frag_aju_sec_tip_pom_op_4_personalizado_desc"
                                 android:textAppearance="?attr/textAppearanceBodySmall"
                                 android:textColor="@color/md_theme_onSurfaceVariant"
                                 android:layout_width="wrap_content"
@@ -210,19 +210,21 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginStart="2dp"
                             android:visibility="gone">
                             <ImageView
                                 android:id="@+id/ivInfoIcon"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:contentDescription="@string/frag_aju_sec_pom_ic_informacion_desc"
+                                android:contentDescription="@string/frag_aju_sec_tip_pom_ic_informacion_desc"
                                 android:src="@drawable/ic_info" />
                             <TextView
                                 android:id="@+id/tvInfoText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/frag_aju_sec_pom_op_4_personalizado_informacion_desc" />
+                                android:text="@string/frag_aju_sec_tip_pom_op_4_personalizado_informacion_desc"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="@color/md_theme_onSurfaceVariant"/>
                         </androidx.appcompat.widget.LinearLayoutCompat>
                     </androidx.appcompat.widget.LinearLayoutCompat>
                     <ImageView
@@ -231,11 +233,41 @@
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_check"
                         android:visibility="invisible"
-                        android:contentDescription="@string/frag_aju_sec_pom_ic_seleccionado_desc"
+                        android:contentDescription="@string/frag_aju_sec_tip_pom_ic_seleccionado_desc"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintRight_toRightOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                    android:text="@string/frag_aju_sec_configurar_pomodoro"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/md_theme_secondary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="4dp"/>
+                <androidx.appcompat.widget.LinearLayoutCompat
+                    android:id="@+id/llSesionAutomatica"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:paddingHorizontal="16dp"
+                    android:orientation="horizontal"
+                    android:foreground="?attr/selectableItemBackground">
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:text="@string/frag_aju_sec_conf_pom_op_sesion_automatica"
+                        android:textAppearance="?attr/textAppearanceSubtitle2"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/sSesionAutomatica"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/frag_aju_sec_conf_pom_op_sesion_automatica_inter"
+                        />
+                </androidx.appcompat.widget.LinearLayoutCompat>
                 <androidx.appcompat.widget.LinearLayoutCompat
                     android:id="@+id/llObjetivoDiarioOption"
                     android:layout_width="match_parent"
@@ -255,14 +287,14 @@
                         android:paddingHorizontal="16dp"
                         android:foreground="?attr/selectableItemBackground">
                         <androidx.appcompat.widget.AppCompatTextView
-                            android:text="@string/frag_aju_sec_pom_op_objetivo_diario"
-                            android:textAppearance="?attr/textAppearanceSubtitle1"
+                            android:text="@string/frag_aju_sec_conf_pom_op_objetivo_diario"
+                            android:textAppearance="?attr/textAppearanceSubtitle2"
                             android:textColor="@color/md_theme_onBackground"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"/>
                         <androidx.appcompat.widget.AppCompatTextView
                             android:id="@+id/tvObjetivoDiarioDescription"
-                            android:text="@string/frag_aju_sec_pom_op_objetivo_diario_desc"
+                            android:text="@string/frag_aju_sec_conf_pom_op_objetivo_diario_desc_def"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="@color/md_theme_onSurfaceVariant"
                             android:layout_width="match_parent"
@@ -277,12 +309,12 @@
                         android:layout_marginVertical="12dp"/>
 
                     <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchObjetivoDiario"
+                        android:id="@+id/sObjetivoDiario"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:paddingStart="12dp"
                         android:paddingEnd="16dp"
-                        android:contentDescription="@string/frag_aju_sec_pom_op_objetivo_diario_inter" />
+                        android:contentDescription="@string/frag_aju_sec_conf_pom_op_objetivo_diario_inter" />
 
                 </androidx.appcompat.widget.LinearLayoutCompat>
             </androidx.appcompat.widget.LinearLayoutCompat>
@@ -298,7 +330,7 @@
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:text="@string/frag_aju_sec_sistema"
-                android:textAppearance="?attr/textAppearanceHeadline5"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textColor="@color/md_theme_secondary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -314,6 +346,7 @@
                 android:foreground="?attr/selectableItemBackground">
                 <androidx.appcompat.widget.AppCompatTextView
                     android:text="@string/frag_aju_sec_sis_op_tema"
+                    android:textAppearance="?attr/textAppearanceSubtitle1"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"/>
@@ -327,12 +360,13 @@
                 android:foreground="?attr/selectableItemBackground">
                 <androidx.appcompat.widget.AppCompatTextView
                     android:text="@string/frag_aju_sec_sis_op_sonido"
+                    android:textAppearance="?attr/textAppearanceSubtitle1"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     />
                 <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchSonido"
+                    android:id="@+id/sSonido"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:contentDescription="@string/frag_aju_sec_sis_op_sonido_inter"
@@ -347,17 +381,39 @@
                 android:foreground="?attr/selectableItemBackground">
                 <androidx.appcompat.widget.AppCompatTextView
                     android:text="@string/frag_aju_sec_sis_op_vibracion"
+                    android:textAppearance="?attr/textAppearanceSubtitle1"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     />
                 <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchVibracion"
+                    android:id="@+id/sVibracion"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:contentDescription="@string/frag_aju_sec_sis_op_vibracion_inter"
                     />
             </androidx.appcompat.widget.LinearLayoutCompat>
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:id="@+id/llNotificacion"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:paddingHorizontal="16dp"
+                android:orientation="horizontal"
+                android:foreground="?attr/selectableItemBackground">
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:text="@string/frag_aju_sec_sis_op_notificacion"
+                    android:textAppearance="?attr/textAppearanceSubtitle1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    />
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/sNotificacion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/frag_aju_sec_sis_op_notificacion_inter"
+                    />
+            </androidx.appcompat.widget.LinearLayoutCompat>
         </androidx.appcompat.widget.LinearLayoutCompat>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

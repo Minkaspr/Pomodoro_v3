@@ -20,14 +20,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <HorizontalScrollView
-        android:id="@+id/hsvContenedor"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nsvContenedorChips"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"
         android:paddingVertical="8dp"
         android:layout_marginTop="16dp"
-        android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvTitulo"
@@ -66,23 +65,22 @@
                 android:layout_height="wrap_content"
                 android:text="@string/frag_ren_chip_este_mes" />
         </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
+    </androidx.core.widget.NestedScrollView>
 
-    <ScrollView
-        android:id="@+id/svContenedor"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nsvContenedorFragments"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/hsvContenedor">
+        app:layout_constraintTop_toBottomOf="@+id/nsvContenedorChips">
 
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/pager_filtro_vista"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,5 +1,6 @@
 package com.mk.pomodoro.ui;
 
+import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -12,15 +13,19 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -42,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String ID_CANAL_SERVICIO_TEMPORIZADOR = "CanalServicioTemporizador";
     private static final String ACCION_TEMPORIZADOR_TERMINADO = "com.mk.pomodoro.ACCION_TEMPORIZADOR_TERMINADO";
     //private static final int CODIGO_SOLICITUD_NOTIFICACIONES = 1;
+    private String PERMISO_NOTIFICACIONES;
+    private boolean permisoNotificaciones;
     private PomodoroAppDB pomodoroDB;
 
     private int idElementoSeleccionado;
@@ -50,6 +57,8 @@ public class MainActivity extends AppCompatActivity {
 
     private ViewPager2 vpPaginas;
     private BottomNavigationView navegacionInferior;
+    private SharedPreferences preferencias;
+    private SharedPreferences.Editor actualizarPreferencias;
     private GestorPomodoroViewModel gestorPomodoro;
 
     private final BroadcastReceiver temporizadorTerminadoReceiver = new BroadcastReceiver() {
@@ -75,6 +84,8 @@ public class MainActivity extends AppCompatActivity {
 
         vpPaginas = findViewById(R.id.pager_vista);
         navegacionInferior = findViewById(R.id.navegacion_inferior);
+        preferencias = this.getSharedPreferences(ConstantesAppConfig.NOM_ARCHIVO_PREFERENCIAS, MODE_PRIVATE);
+        actualizarPreferencias = preferencias.edit();
         gestorPomodoro = new ViewModelProvider(this).get(GestorPomodoroViewModel.class);
         nombreCanal = getString(R.string.canal_not_nombre);
         descripcionCanal = getString(R.string.canal_not_descripcion);
@@ -141,6 +152,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         aplicarConfiguraciones();
+        evaluarPermisoNotificacion();
+        boolean notificacionBaseActivada = preferencias.getBoolean(ConstantesAppConfig.C_DIALOGO_NOTIFICACION_BASE_MOSTRADO, ConstantesAppConfig.V_DIALOGO_NOTIFICACION_BASE_MOSTRADO_B);
+        if (!permisoNotificaciones && !notificacionBaseActivada){
+            dialogoBasePermisoNotificacion.launch(PERMISO_NOTIFICACIONES);
+            actualizarPreferencias.putBoolean(ConstantesAppConfig.C_DIALOGO_NOTIFICACION_BASE_MOSTRADO,true).apply();
+        }
+        boolean notificacionPersonalizadaActivada = preferencias.getBoolean(ConstantesAppConfig.C_DIALOGO_NOTIFICACION_PERSONALIZADO_MOSTRADO, ConstantesAppConfig.V_DIALOGO_NOTIFICACION_PERSONALIZADO_MOSTRADO_B);
+        if(!permisoNotificaciones && !notificacionPersonalizadaActivada && notificacionBaseActivada){
+            gestorPomodoro.setMostrarDialogoNotificacionPersonalizado(true);
+            actualizarPreferencias.putBoolean(ConstantesAppConfig.C_DIALOGO_NOTIFICACION_PERSONALIZADO_MOSTRADO,true).apply();
+        }
     }
 
     @Override
@@ -154,6 +176,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         NotificationManagerCompat managerCompat = NotificationManagerCompat.from(this.getApplicationContext());
         managerCompat.cancel(1);
+        evaluarPermisoNotificacion();
     }
 
     @Override
@@ -183,6 +206,32 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, navigationBars.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
+    }
+
+    private void evaluarPermisoNotificacion(){
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            permisoNotificaciones = true; // Permiso siempre activado
+        } else {
+            PERMISO_NOTIFICACIONES = Manifest.permission.POST_NOTIFICATIONS;
+            permisoNotificaciones = ContextCompat.checkSelfPermission(this, PERMISO_NOTIFICACIONES) == PackageManager.PERMISSION_GRANTED;
+        }
+        actualizarPreferencias.putBoolean(ConstantesAppConfig.C_PERMISO_NOTIFICACION_SISTEMA_ACTUAL, permisoNotificaciones).apply();
+    }
+
+    private final ActivityResultLauncher<String> dialogoBasePermisoNotificacion =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                permisoNotificaciones = isGranted;
+                actualizarPreferencias.putBoolean(ConstantesAppConfig.C_PERMISO_NOTIFICACION_SISTEMA_ACTUAL, permisoNotificaciones).apply();
+            });
+
+    private void evaluarValorPermisoNotificacionLocal(){
+        int PERMISO_NO_ASIGNADO = -1;
+        int PERMISO_DENEGADO = 0;
+        int PERMISO_OTORGADO = 1;
+
+        if(Permission(this, PERMISO_NOTIFICACIONES) == PERMISO_NO_ASIGNADO){
+
+        }
     }
 
     private void seleccionarFragmentoGuardado(Bundle savedInstanceState) {

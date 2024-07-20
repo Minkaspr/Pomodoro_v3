@@ -1,6 +1,6 @@
 package com.mk.pomodoro.model;
 
-public class SesionDTO {
+public class Sesion {
     private int idSesion;
     private Integer idIntervaloTrabajo;
     private Integer idIntervaloDescanso;
@@ -8,7 +8,7 @@ public class SesionDTO {
     private int duracionTotalSesion;
     private boolean completa;
 
-    public SesionDTO() {
+    public Sesion() {
     }
 
     public int getIdSesion() {

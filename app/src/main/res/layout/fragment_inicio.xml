@@ -42,11 +42,11 @@
             />
     </com.google.android.material.tabs.TabLayout>
 
-    <ScrollView
-        android:id="@+id/svContenedor"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nsvContenedorChips"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="32dp"
+        android:padding="32dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tlOpcionesTiempo">
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -126,6 +126,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:icon="@drawable/ic_player_play"
+                    android:contentDescription="@string/frag_ini_btn_reproducir_desc"
                     app:iconSize="48dp"
                     />
                 <com.google.android.material.button.MaterialButton
@@ -160,6 +161,5 @@
                     />
             </androidx.appcompat.widget.LinearLayoutCompat>
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </ScrollView>
-
+    </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

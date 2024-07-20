@@ -292,6 +292,14 @@
             android:textAppearance="?attr/textAppearanceHeadline6"
             android:textColor="?android:attr/textColorSecondary" />
 
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tvNoHayDatos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/no_hay_datos"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?android:attr/textColorSecondary" />
+
         <View
             android:layout_width="0dp"
             android:layout_height="12dp" />
@@ -300,6 +308,7 @@
             android:id="@+id/rvSesionesHoy"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:visibility="gone"/>
     </androidx.appcompat.widget.LinearLayoutCompat>
 </androidx.constraintlayout.widget.ConstraintLayout>

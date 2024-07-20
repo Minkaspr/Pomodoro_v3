@@ -2,9 +2,7 @@ package com.mk.pomodoro.ui;
 
 import static android.content.Context.MODE_PRIVATE;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,37 +26,19 @@ import com.mk.pomodoro.R;
 import com.mk.pomodoro.ui.viewmodel.GestorPomodoroViewModel;
 import com.mk.pomodoro.util.ConstantesAppConfig;
 
+import java.util.Objects;
+
 public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
 
     private TextInputLayout tilTiempoTrabajo, tilTiempoDescanso;
     private TextInputEditText tietTiempoTrabajo, tietTiempoDescanso;
-    private Button btnCerrar, btnConfirmar;
+    private Button btnConfirmar;
 
-    private Boolean isConfirming = false;
-    private boolean shouldShowBottomSheet = true;
+    private boolean mostrarBottomSheet = true;
 
     private SharedPreferences preferencias;
     private SharedPreferences.Editor actualizarPreferencias;
     private GestorPomodoroViewModel gestorPomodoro;
-
-    public interface OnCloseListener {
-        void onClose();
-    }
-    private OnCloseListener onCloseListener;
-
-    public void setOnCloseListener(OnCloseListener onCloseListener) {
-        this.onCloseListener = onCloseListener;
-    }
-
-    public interface OnOptionChangeListener {
-        void onOptionChange(int option);
-    }
-
-    private OnOptionChangeListener onOptionChangeListener;
-
-    public void setOnOptionChangeListener(OnOptionChangeListener onOptionChangeListener) {
-        this.onOptionChangeListener = onOptionChangeListener;
-    }
 
     public static PersonalizarPomodoroBottomSheet newInstance() {
         return new PersonalizarPomodoroBottomSheet();
@@ -87,9 +67,9 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
         tietTiempoTrabajo = vista.findViewById(R.id.tietWorkingTime);
         tilTiempoDescanso = vista.findViewById(R.id.tilBreakTime);
         tietTiempoDescanso = vista.findViewById(R.id.tietBreakTime);
-        btnCerrar = vista.findViewById(R.id.btnClose);
-        btnConfirmar = vista.findViewById(R.id.btnConfirm);
+        Button btnCerrar = vista.findViewById(R.id.btnClose);
         btnCerrar.setOnClickListener(v -> new Handler().postDelayed(this::dismiss, 250));
+        btnConfirmar = vista.findViewById(R.id.btnConfirm);
 
         if (getArguments() != null) {
             int tiempoTrabajo = getArguments().getInt("tiempoTrabajo");
@@ -97,8 +77,8 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
 
             tietTiempoTrabajo.setText(String.valueOf(tiempoTrabajo));
             tietTiempoDescanso.setText(String.valueOf(tiempoDescanso));
-            tietTiempoTrabajo.setSelection(tietTiempoTrabajo.getText().length());
-            tietTiempoDescanso.setSelection(tietTiempoDescanso.getText().length());
+            tietTiempoTrabajo.setSelection(Objects.requireNonNull(tietTiempoTrabajo.getText()).length());
+            tietTiempoDescanso.setSelection(Objects.requireNonNull(tietTiempoDescanso.getText()).length());
         }
 
         tietTiempoTrabajo.addTextChangedListener(new TextWatcher() {
@@ -135,19 +115,15 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 tietTiempoDescanso.clearFocus();
                 btnConfirmar.requestFocus();
-                Activity activity = getActivity();
-                if (activity != null) {
-                    InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-                }
+                InputMethodManager imm = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
                 return true;
             }
             return false;
         });
 
         btnConfirmar.setOnClickListener(v -> {
-            isConfirming = true;
-            shouldShowBottomSheet = false;
+            mostrarBottomSheet = false;
             // Obtener los tiempos ingresados por el usuario
             String tiempoTrabajoStr = tietTiempoTrabajo.getText() != null ? tietTiempoTrabajo.getText().toString() : "";
             String tiempoDescansoStr = tietTiempoDescanso.getText() != null ? tietTiempoDescanso.getText().toString() : "";
@@ -157,12 +133,12 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
             guardarTiempos(tiempoTrabajo, tiempoDescanso);
 
             // Actualizar los valores en el ViewModel
+            gestorPomodoro.setMostrarInfoPersonalizado(true);
+            gestorPomodoro.setTipoPomodoroCambiado(true);
+            gestorPomodoro.setTiemposActualizados(true);
             gestorPomodoro.setTiempoTrabajo(tiempoTrabajo);
             gestorPomodoro.setTiempoDescanso(tiempoDescanso);
             gestorPomodoro.setOpcionSeleccionada(4);
-            gestorPomodoro.setMostrarInfoPersonalizado(true);
-            gestorPomodoro.setTiemposActualizados(true);
-
             // Recupera la última opción seleccionada de SharedPreferences
             boolean estaSnackbarActivado = preferencias.getBoolean(ConstantesAppConfig.C_SNACKBAR_PERSONALIZADO, ConstantesAppConfig.V_SNACKBAR_PERSONALIZADO_B);
             if (!estaSnackbarActivado){
@@ -170,23 +146,6 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
             }
             dismiss();
         });
-    }
-
-
-    @Override
-    public void onDismiss(DialogInterface dialog) {
-        super.onDismiss(dialog);
-        Activity activity = getActivity();
-        if (activity != null) {
-            // Comprueba si el BottomSheet se está cerrando confirmando los cambios
-            if (isConfirming) {
-                int ultimaOpcionSeleccionada = preferencias.getInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, ConstantesAppConfig.V_OPCION_SELECCIONADA);
-                if (onOptionChangeListener != null) {
-                    onOptionChangeListener.onOptionChange(ultimaOpcionSeleccionada);
-                }
-            }
-        }
-        onCloseListener.onClose();
     }
 
     private void validarEntrada(CharSequence entradaUsuario , int minimo, int maximo, TextInputLayout til) {
@@ -213,20 +172,17 @@ public class PersonalizarPomodoroBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void guardarTiempos(int tiempoTrabajo, int tiempoDescanso) {
-        Activity activity = getActivity();
-        if (activity != null) {
-            actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_TRABAJO, tiempoTrabajo);
-            actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_DESCANSO, tiempoDescanso);
-            actualizarPreferencias.putInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, 4);
-            actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_TRABAJO_PERSONALIZADO, tiempoTrabajo);
-            actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_DESCANSO_PERSONALIZADO, tiempoDescanso);
-            actualizarPreferencias.putBoolean(ConstantesAppConfig.C_PERSONALIZADO_ACTIVADO, true);
-            actualizarPreferencias.putBoolean(ConstantesAppConfig.C_INFO_PERSONALIZADO, true);
-            actualizarPreferencias.apply();
-        }
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_TRABAJO, tiempoTrabajo);
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_DESCANSO, tiempoDescanso);
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, 4);
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_TRABAJO_PERSONALIZADO, tiempoTrabajo);
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_TIEMPO_DESCANSO_PERSONALIZADO, tiempoDescanso);
+        actualizarPreferencias.putBoolean(ConstantesAppConfig.C_PERSONALIZADO_ACTIVADO, true);
+        actualizarPreferencias.putBoolean(ConstantesAppConfig.C_INFO_PERSONALIZADO, true);
+        actualizarPreferencias.apply();
     }
 
-    public boolean getShouldShowBottomSheet() {
-        return shouldShowBottomSheet;
+    public boolean getMostrarBottomSheet() {
+        return mostrarBottomSheet;
     }
 }
