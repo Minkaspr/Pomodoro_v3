@@ -1,6 +1,9 @@
 package com.mk.pomodoro.ui;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -8,12 +11,19 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContract;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.mk.pomodoro.R;
+import com.mk.pomodoro.ui.viewmodel.GestorPomodoroViewModel;
 
 public class ActivarNotificacionBottomSheet extends BottomSheetDialogFragment {
 
@@ -31,8 +41,10 @@ public class ActivarNotificacionBottomSheet extends BottomSheetDialogFragment {
     public void onViewCreated(@NonNull View vista, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(vista, savedInstanceState);
         MaterialButton btnContinuar = vista.findViewById(R.id.btnContinuar);
+
         btnContinuar.setOnClickListener(v -> {
-            /* Informacion de la aplicacion
+            /*
+            Informacion de la aplicacion
             Intent rintent = new Intent();
             rintent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
             Uri uri = Uri.fromParts("package",  requireActivity().getPackageName(), null);

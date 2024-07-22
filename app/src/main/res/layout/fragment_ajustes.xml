@@ -412,6 +412,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:contentDescription="@string/frag_aju_sec_sis_op_notificacion_inter"
+                    android:visibility="invisible"
                     />
             </androidx.appcompat.widget.LinearLayoutCompat>
         </androidx.appcompat.widget.LinearLayoutCompat>

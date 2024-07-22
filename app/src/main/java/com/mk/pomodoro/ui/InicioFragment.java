@@ -2,17 +2,21 @@ package com.mk.pomodoro.ui;
 
 import static android.content.Context.MODE_PRIVATE;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -256,6 +260,12 @@ public class InicioFragment extends Fragment {
             int segundosRestantes = (int) (millisUntilFinished / 1000f);
             tiempo.setText(String.format(Locale.getDefault(), "%02d:%02d", segundosRestantes / 60, segundosRestantes % 60));
             barraProgresoCircular.setProgress(segundosRestantes);
+
+            // Enviar un broadcast con el tiempo restante
+            Intent intent = new Intent("com.mk.pomodoro.ACTUALIZAR_NOTIFICACION");
+            intent.putExtra("segundosRestantes", segundosRestantes);
+            LocalBroadcastManager.getInstance(requireActivity()).sendBroadcast(intent);
+
             System.out.println(segundosRestantes);
             iniciarTemporizador = true;
         });

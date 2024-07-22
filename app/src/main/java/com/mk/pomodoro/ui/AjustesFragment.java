@@ -2,8 +2,10 @@ package com.mk.pomodoro.ui;
 
 import static android.content.Context.MODE_PRIVATE;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -49,7 +51,7 @@ public class AjustesFragment extends Fragment  {
     private LinearLayoutCompat llcPersonalizadoInfo, llcObjetivoDiario, llcSesionAutomatica, llcTema, llcSonido, llcVibracion, llcNotificiacion;
     private ConstraintLayout clClasico, clExtendido, clCorto, clPersonalizado;
     private ImageView ivClasico, ivExtendido, ivCorto, ivPersonalizado;
-    private MaterialSwitch sObjetivoDiario, sSesionAutomatica, sSonido, sVibracion, sNotificacion;
+    private MaterialSwitch sObjetivoDiario, sSesionAutomatica, sSonido, sVibracion;
     private TextView tvObjetivoDiarioDescription;
 
     private SharedPreferences preferencias;
@@ -58,6 +60,7 @@ public class AjustesFragment extends Fragment  {
     private DaoIntervalo daoIntervalo;
 
     private boolean sesionAutomaticaHabilitado, objetivoHabilitado, sonidoHabilitado, vibracionHabilitada, notificacionHabilitado;
+    private int permisoLocal;
     private boolean tiempoObjetivoEstablecido, desdeSwitch;
     boolean siguiente = false;
 
@@ -104,7 +107,6 @@ public class AjustesFragment extends Fragment  {
         llcVibracion = vista.findViewById(R.id.llVibracion);
         sVibracion = vista.findViewById(R.id.sVibracion);
         llcNotificiacion = vista.findViewById(R.id.llNotificacion);
-        sNotificacion = vista.findViewById(R.id.sNotificacion);
 
         // Configuracion Predeterminada
         int opcionSeleccionada = preferencias.getInt(ConstantesAppConfig.C_OPCION_SELECCIONADA, ConstantesAppConfig.V_OPCION_SELECCIONADA);
@@ -119,14 +121,13 @@ public class AjustesFragment extends Fragment  {
 
         sSonido.setClickable(false);
         sVibracion.setClickable(false);
-        sNotificacion.setClickable(false);
         sonidoHabilitado = preferencias.getBoolean(ConstantesAppConfig.C_SONIDO, ConstantesAppConfig.V_SONIDO_B);
         sSonido.setChecked(sonidoHabilitado);
         vibracionHabilitada = preferencias.getBoolean(ConstantesAppConfig.C_VIBRACION, ConstantesAppConfig.V_VIBRACION_B);
         sVibracion.setChecked(vibracionHabilitada);
-        notificacionHabilitado = preferencias.getBoolean(ConstantesAppConfig.C_NOTIFICACION, ConstantesAppConfig.V_NOTIFICACION_B);
-        sNotificacion.setChecked(notificacionHabilitado);
-
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU){
+            llcNotificiacion.setVisibility(View.GONE);
+        }
         // --
 
         clExtendido.setOnClickListener(v -> manejarCambioTipoPomodoro(() -> {
@@ -225,17 +226,14 @@ public class AjustesFragment extends Fragment  {
             actualizarPreferencias.apply();
         });
         llcNotificiacion.setOnClickListener(v-> {
-            /*sNotificacion.setChecked(!sNotificacion.isChecked());
-            actualizarPreferencias.putBoolean(ConstantesAppConfig.C_NOTIFICACION,sNotificacion.isChecked());
-            actualizarPreferencias.apply();*/
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !estaNotificacionHabilitado()) {
+            boolean permisoNotificaciones = ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+            if (!permisoNotificaciones) {
                 // Mostrar el BottomSheet
                 ActivarNotificacionBottomSheet bottomSheet = ActivarNotificacionBottomSheet.newInstance();
                 bottomSheet.show(getChildFragmentManager(), "ActivarNotificacionBottomSheet");
             } else {
-                sNotificacion.setChecked(!sNotificacion.isChecked());
-                actualizarPreferencias.putBoolean(ConstantesAppConfig.C_NOTIFICACION, sNotificacion.isChecked()).apply();
-                gestorPomodoro.setNotificacionActivada(sNotificacion.isChecked());
+                View rootView = requireActivity().findViewById(android.R.id.content);
+                Snackbar.make(rootView, "Los permisos de notificaciones ya han sido concedidos", Snackbar.LENGTH_LONG).show();
             }
         });
     }
@@ -557,10 +555,6 @@ public class AjustesFragment extends Fragment  {
         if (!bottomSheet.isAdded() && bottomSheet.getMostrarBottomSheet()) {
             bottomSheet.show(getParentFragmentManager(), "PersonalizarPomodoroBottomSheet");
         }
-    }
-
-    public boolean estaNotificacionHabilitado(){
-        return NotificationManagerCompat.from(requireContext()).areNotificationsEnabled();
     }
 
     private String formatearTiempo(long milisegundos) {

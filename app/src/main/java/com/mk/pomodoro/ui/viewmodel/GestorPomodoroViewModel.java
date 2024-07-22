@@ -18,7 +18,7 @@ public class GestorPomodoroViewModel extends ViewModel {
     private final MutableLiveData<Boolean> mostrarSnackbar = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> objetivoCambiado = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> datosTemporizadorActualizados = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> notificacionActivada = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> notificacionModificada = new MutableLiveData<>();
     private final MutableLiveData<Boolean> mostrarDialogoNotificacionPersonalizado = new MutableLiveData<>(false);
 
     public void setTiempoTrabajo(int tiempo) {
@@ -125,12 +125,12 @@ public class GestorPomodoroViewModel extends ViewModel {
         return datosTemporizadorActualizados;
     }
 
-    public void setNotificacionActivada(boolean activado) {
-        notificacionActivada.setValue(activado);
+    public void setNotificacionModificada(boolean activado) {
+        notificacionModificada.setValue(activado);
     }
 
-    public LiveData<Boolean> getNotificacionActivada() {
-        return notificacionActivada;
+    public LiveData<Boolean> getNotificacionModificada() {
+        return notificacionModificada;
     }
 
     public void setMostrarDialogoNotificacionPersonalizado(boolean mostrar){

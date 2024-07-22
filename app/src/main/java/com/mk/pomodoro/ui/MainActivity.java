@@ -70,6 +70,16 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private final BroadcastReceiver actualizarNotificacionReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent != null && "com.mk.pomodoro.ACTUALIZAR_NOTIFICACION".equals(intent.getAction())) {
+                int segundosRestantes = intent.getIntExtra("segundosRestantes", 0);
+                actualizarNotificacionConTiempoRestante(segundosRestantes);
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -142,13 +152,13 @@ public class MainActivity extends AppCompatActivity {
 
         gestorPomodoro.getEstadoTemporizador().observe(this, estadoTemporizador -> {
             if (gestorPomodoro.getTemporizadorTerminado().getValue() != null && gestorPomodoro.getTemporizadorTerminado().getValue()) {
-                mostrarNotificacion();
+                //mostrarNotificacion();
             }
         });
 
         gestorPomodoro.getTemporizadorTerminado().observe(this, temporizadorTerminado -> {
             if (temporizadorTerminado != null && temporizadorTerminado) {
-                mostrarNotificacion();
+               // mostrarNotificacion();
             }
         });
         aplicarConfiguraciones();
@@ -168,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onPause() {
         super.onPause();
-        mostrarNotificacion();
+        //mostrarNotificacion();
     }
 
     @Override
@@ -176,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         NotificationManagerCompat managerCompat = NotificationManagerCompat.from(this.getApplicationContext());
         managerCompat.cancel(1);
+        LocalBroadcastManager.getInstance(this).registerReceiver(actualizarNotificacionReceiver, new IntentFilter("com.mk.pomodoro.ACTUALIZAR_NOTIFICACION"));
         evaluarPermisoNotificacion();
     }
 
@@ -184,6 +195,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         // Anular el registro del BroadcastReceiver
         LocalBroadcastManager.getInstance(this).unregisterReceiver(temporizadorTerminadoReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(actualizarNotificacionReceiver);
         ConexionAppDB.cerrarConexionBD();
     }
 
@@ -208,6 +220,50 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void actualizarNotificacionConTiempoRestante(int segundosRestantes) {
+        String estadoTemporizador = gestorPomodoro.getEstadoTemporizador().getValue();
+        Boolean temporizadorIniciado = gestorPomodoro.getTemporizadorIniciado().getValue();
+
+        String titulo = "Intervalo " + estadoTemporizador;
+        String texto = "Tiempo restante: " + String.format("%02d:%02d", segundosRestantes / 60, segundosRestantes % 60);
+
+        Intent openAppIntent = new Intent(this, MainActivity.class);
+        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this.getApplicationContext(), MainActivity.ID_CANAL_SERVICIO_TEMPORIZADOR)
+                .setSmallIcon(R.drawable.ic_logo_outline)
+                .setContentTitle(titulo)
+                .setContentText(texto)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            int importancia = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel canal = new NotificationChannel(MainActivity.ID_CANAL_SERVICIO_TEMPORIZADOR, nombreCanal, importancia);
+            canal.setDescription(descripcionCanal);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(canal);
+        }
+
+        NotificationManagerCompat managerCompat = NotificationManagerCompat.from(this.getApplicationContext());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!managerCompat.areNotificationsEnabled()) {
+                Intent notificationSettingsIntent  = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                startActivity(notificationSettingsIntent );
+                return;
+            }
+        } else if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        managerCompat.notify(2, builder.build());
+    }
+
     private void evaluarPermisoNotificacion(){
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             permisoNotificaciones = true; // Permiso siempre activado
@@ -215,22 +271,24 @@ public class MainActivity extends AppCompatActivity {
             PERMISO_NOTIFICACIONES = Manifest.permission.POST_NOTIFICATIONS;
             permisoNotificaciones = ContextCompat.checkSelfPermission(this, PERMISO_NOTIFICACIONES) == PackageManager.PERMISSION_GRANTED;
         }
-        actualizarPreferencias.putBoolean(ConstantesAppConfig.C_PERMISO_NOTIFICACION_SISTEMA_ACTUAL, permisoNotificaciones).apply();
+        actualizarPreferencias.putInt(ConstantesAppConfig.C_PERMISO_NOTIFICACION_SISTEMA_ACTUAL, permisoNotificaciones? 1 : 0).apply();
+        evaluarValorPermisoNotificacionLocal();
     }
 
     private final ActivityResultLauncher<String> dialogoBasePermisoNotificacion =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 permisoNotificaciones = isGranted;
-                actualizarPreferencias.putBoolean(ConstantesAppConfig.C_PERMISO_NOTIFICACION_SISTEMA_ACTUAL, permisoNotificaciones).apply();
+                actualizarPreferencias.putInt(ConstantesAppConfig.C_PERMISO_NOTIFICACION_SISTEMA_ACTUAL, permisoNotificaciones? 1 : 0).apply();
+                evaluarValorPermisoNotificacionLocal();
             });
 
     private void evaluarValorPermisoNotificacionLocal(){
-        int PERMISO_NO_ASIGNADO = -1;
-        int PERMISO_DENEGADO = 0;
-        int PERMISO_OTORGADO = 1;
-
-        if(Permission(this, PERMISO_NOTIFICACIONES) == PERMISO_NO_ASIGNADO){
-
+        int permisoSistemaActual = preferencias.getInt(ConstantesAppConfig.C_PERMISO_NOTIFICACION_SISTEMA_ACTUAL, ConstantesAppConfig.V_PERMISO_NOTIFICACION_SISTEMA_ACTUAL_I);
+        int permisoSistemaAnterior = preferencias.getInt(ConstantesAppConfig.C_PERMISO_NOTIFICACION_SISTEMA_ANTERIOR, ConstantesAppConfig.V_PERMISO_NOTIFICACION_SISTEMA_ANTERIOR_I);
+        if (permisoSistemaAnterior != permisoSistemaActual){
+            actualizarPreferencias.putInt(ConstantesAppConfig.C_PERMISO_NOTIFICACION_LOCAL, permisoSistemaActual);
+            actualizarPreferencias.putInt(ConstantesAppConfig.C_PERMISO_NOTIFICACION_SISTEMA_ANTERIOR, permisoSistemaActual);
+            actualizarPreferencias.apply();
         }
     }
 
@@ -292,8 +350,8 @@ public class MainActivity extends AppCompatActivity {
                 .setContentTitle(title)
                 .setContentText(text)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true);
+                .setContentIntent(pendingIntent);
+                //.setAutoCancel(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             int importancia = NotificationManager.IMPORTANCE_DEFAULT;
@@ -345,8 +403,8 @@ public class MainActivity extends AppCompatActivity {
                 .setContentTitle(title)
                 .setContentText(text)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true);
+                .setContentIntent(pendingIntent);
+                //.setAutoCancel(true);
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
 
